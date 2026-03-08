@@ -517,7 +517,9 @@ export const recipesRouter = router({
 
       const prompt = `Extract the recipe from the following web page content and return it as JSON.
 
-IMPORTANT: Detect the language used in the recipe content and write ALL text fields in that SAME language.
+IMPORTANT:
+- Detect the language used in the recipe content and write ALL text fields in that SAME language.
+- If the detected language is Chinese, you MUST output Simplified Chinese (简体中文, zh-Hans) only. Do NOT use Traditional Chinese.
 
 Source URL: ${input.url}
 Page content:
@@ -539,7 +541,7 @@ Return ONLY valid JSON with this exact structure:
         messages: [
           {
             role: "system",
-            content: "You are a recipe extraction expert. Extract recipe data from web page content and return valid JSON only. If no recipe is found, return an error field in the JSON.",
+            content: "You are a recipe extraction expert. Extract recipe data from web page content and return valid JSON only. If no recipe is found, return an error field in the JSON. When output language is Chinese, always use Simplified Chinese (zh-Hans), never Traditional Chinese.",
           },
           { role: "user", content: prompt },
         ],
@@ -588,7 +590,10 @@ Return ONLY valid JSON with this exact structure:
     .mutation(async ({ input }) => {
       const prompt = `Generate a recipe in JSON format for the following dish.
 
-IMPORTANT: Detect the language of the dish name and write ALL text fields (title, description, ingredient names, step descriptions) in that SAME language. For example, if the dish name is in Chinese, write everything in Chinese. If it is in German, write everything in German. If it is in English, write everything in English.
+IMPORTANT:
+- Detect the language of the dish name and write ALL text fields (title, description, ingredient names, step descriptions) in that SAME language.
+- If the dish name is Chinese, you MUST output Simplified Chinese (简体中文, zh-Hans) only. Do NOT use Traditional Chinese.
+- If it is in German, write everything in German. If it is in English, write everything in English.
 
 Dish Name: ${input.dishName}
 Servings: ${input.servings}
@@ -612,7 +617,7 @@ Return ONLY valid JSON with this exact structure (no tags field):
           messages: [
             {
               role: "system",
-              content: "You are a professional chef. Generate recipes in valid JSON format only. Always detect the language of the dish name provided by the user and write all recipe content (title, description, ingredients, steps) in that exact same language.",
+              content: "You are a professional chef. Generate recipes in valid JSON format only. Always detect the language of the dish name provided by the user and write all recipe content (title, description, ingredients, steps) in that exact same language. If the language is Chinese, always use Simplified Chinese (zh-Hans), never Traditional Chinese.",
             },
             {
               role: "user",

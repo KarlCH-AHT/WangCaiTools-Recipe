@@ -39,6 +39,15 @@ export default function RecipePreviewDialog({
 }: RecipePreviewDialogProps) {
   const t = useTranslation();
   const fu = useFormatUnit();
+  const formatIngredientMeta = (ingredient: { amount: number; unit: string }) => {
+    const unit = ingredient.unit ?? "";
+    const hasMeaningfulAmount = Number.isFinite(ingredient.amount) && ingredient.amount > 0;
+    const isRaw = unit === "__raw__" || unit.trim() === "";
+    if (!hasMeaningfulAmount || isRaw) return "";
+    const amountText = ingredient.amount % 1 === 0 ? String(ingredient.amount) : ingredient.amount.toFixed(1);
+    const unitText = fu(unit);
+    return unitText ? `${amountText} ${unitText}` : amountText;
+  };
 
   if (!recipe) return null;
 
@@ -125,9 +134,11 @@ export default function RecipePreviewDialog({
                     className="flex items-center justify-between text-sm"
                   >
                     <span className="text-foreground">{ingredient.name}</span>
-                    <span className="text-muted-foreground text-xs">
-                      {ingredient.amount} {fu(ingredient.unit)}
-                    </span>
+                    {formatIngredientMeta(ingredient) ? (
+                      <span className="text-muted-foreground text-xs">
+                        {formatIngredientMeta(ingredient)}
+                      </span>
+                    ) : null}
                   </li>
                 ))}
               </ul>

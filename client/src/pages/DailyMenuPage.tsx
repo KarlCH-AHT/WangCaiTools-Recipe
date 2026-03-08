@@ -36,12 +36,22 @@ export default function DailyMenuPage() {
     menuItems.forEach((item) => {
       const scale = item.servings / item.recipe.servings;
       item.recipe.ingredients.forEach((ing: any) => {
+        const unit = (ing.unit ?? "").toString();
+        const amount = Number(ing.amount ?? 0);
+        const isRawLine = unit === "__raw__" || unit.trim() === "" || !Number.isFinite(amount) || amount <= 0;
+        if (isRawLine) {
+          const key = `${ing.name}__raw`;
+          if (!map.has(key)) {
+            map.set(key, { name: ing.name, amount: 0, unit: "__raw__" });
+          }
+          return;
+        }
         const key = `${ing.name}__${ing.unit}`;
         const existing = map.get(key);
         if (existing) {
-          existing.amount += ing.amount * scale;
+          existing.amount += amount * scale;
         } else {
-          map.set(key, { name: ing.name, amount: ing.amount * scale, unit: ing.unit });
+          map.set(key, { name: ing.name, amount: amount * scale, unit });
         }
       });
     });
@@ -65,8 +75,12 @@ export default function DailyMenuPage() {
   const handleCopyList = useCallback(() => {
     const text = combinedIngredients
       .map((ing) => {
+        if (ing.unit === "__raw__" || !Number.isFinite(ing.amount) || ing.amount <= 0) {
+          return `• ${ing.name}`;
+        }
         const amt = ing.amount % 1 === 0 ? ing.amount : ing.amount.toFixed(1);
-        return `• ${amt} ${fu(ing.unit)} ${ing.name}`;
+        const unitText = fu(ing.unit);
+        return unitText ? `• ${amt} ${unitText} ${ing.name}` : `• ${amt} ${ing.name}`;
       })
       .join("\n");
     navigator.clipboard.writeText(text).then(() => {
@@ -263,7 +277,11 @@ export default function DailyMenuPage() {
                       {combinedIngredients.map((ing, idx) => {
                         const key = `${ing.name}__${ing.unit}`;
                         const isChecked = checkedItems.has(key);
-                        const amt = ing.amount % 1 === 0 ? ing.amount : ing.amount.toFixed(1);
+                        const showAmount = Number.isFinite(ing.amount) && ing.amount > 0 && ing.unit !== "__raw__";
+                        const amt = showAmount
+                          ? (ing.amount % 1 === 0 ? ing.amount : ing.amount.toFixed(1))
+                          : null;
+                        const unitText = showAmount ? fu(ing.unit) : "";
                         return (
                           <button
                             key={idx}
@@ -286,9 +304,11 @@ export default function DailyMenuPage() {
                                 {ing.name}
                               </span>
                             </div>
-                            <span className="text-xs text-muted-foreground flex-shrink-0">
-                              {amt} {fu(ing.unit)}
-                            </span>
+                            {showAmount ? (
+                              <span className="text-xs text-muted-foreground flex-shrink-0">
+                                {unitText ? `${amt} ${unitText}` : amt}
+                              </span>
+                            ) : null}
                           </button>
                         );
                       })}

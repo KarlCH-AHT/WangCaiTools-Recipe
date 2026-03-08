@@ -1,7 +1,7 @@
 import { useLocation, useRoute } from "wouter";
 import { useRecipes } from "@/contexts/RecipeContext";
 import { useTranslation, useFormatUnit } from "@/hooks/useTranslation";
-import { ArrowLeft, ChefHat, Download, ExternalLink, StickyNote, Edit2, Trash2, Loader2, Star } from "lucide-react";
+import { ArrowLeft, ChefHat, Download, ExternalLink, StickyNote, Edit2, Trash2, Loader2, Star, LayoutGrid } from "lucide-react";
 import { useState, useRef, useCallback, useEffect } from "react";
 import EditRecipeDialog from "@/components/EditRecipeDialog";
 import { exportRecipeToPDF } from "@/lib/pdfExport";
@@ -313,12 +313,31 @@ export default function RecipeDetail() {
           {recipe.description && (
             <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed max-w-2xl">{recipe.description}</p>
           )}
-          <div className="flex flex-wrap items-center gap-3 mt-3">
+          <div className="flex flex-wrap items-center gap-2 mt-3">
             {recipe.category && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent text-accent-foreground">
+              <span className="inline-flex items-center gap-1.5 rounded-md border border-zinc-300 bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+                <span className="inline-flex h-4 w-4 items-center justify-center rounded-sm bg-zinc-200 dark:bg-zinc-700">
+                  <LayoutGrid className="h-3 w-3" />
+                </span>
                 {recipe.category}
               </span>
             )}
+            {(recipe.tags || []).slice(0, 6).map((tag: string, idx: number) => (
+              <span
+                key={tag}
+                className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                  idx % 4 === 0
+                    ? "border border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300"
+                    : idx % 4 === 1
+                      ? "border border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-300"
+                      : idx % 4 === 2
+                        ? "border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300"
+                        : "border border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300"
+                }`}
+              >
+                {tag}
+              </span>
+            ))}
             <StarRating value={recipe.rating ?? 0} onChange={handleRating} />
           </div>
         </div>

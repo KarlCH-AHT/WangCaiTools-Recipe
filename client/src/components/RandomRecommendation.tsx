@@ -1,15 +1,22 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Shuffle, X } from "lucide-react";
+import { Eye, Plus, Shuffle, X } from "lucide-react";
 import { Recipe } from "@/types/recipe";
 import { useTranslation } from "@/hooks/useTranslation";
 
 interface RandomRecommendationProps {
   recipes: Recipe[];
-  onSelectRecipe: (recipe: Recipe) => void;
+  onAddToTodayMenu: (recipe: Recipe) => void;
+  onPreviewRecipe: (recipe: Recipe) => void;
+  isInTodayMenu?: (recipeId: string) => boolean;
 }
 
-export default function RandomRecommendation({ recipes, onSelectRecipe }: RandomRecommendationProps) {
+export default function RandomRecommendation({
+  recipes,
+  onAddToTodayMenu,
+  onPreviewRecipe,
+  isInTodayMenu,
+}: RandomRecommendationProps) {
   const t = useTranslation();
   const [recommendations, setRecommendations] = useState<Recipe[]>([]);
   const [expanded, setExpanded] = useState(false);
@@ -82,28 +89,42 @@ export default function RandomRecommendation({ recipes, onSelectRecipe }: Random
             </div>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
             {recommendations.map((recipe) => {
               const thumb = recipe.images?.[0] || recipe.imageUrl;
+              const inMenu = isInTodayMenu?.(recipe.id) ?? false;
               return (
-                <button
+                <div
                   key={recipe.id}
-                  onClick={() => {
-                    onSelectRecipe(recipe);
-                    handleClose();
-                  }}
-                  className="flex w-full items-center gap-2 rounded-xl border bg-zinc-50 p-2 text-left transition-colors hover:bg-zinc-100 dark:bg-zinc-800/60 dark:hover:bg-zinc-800"
+                  className="recipe-card group overflow-hidden"
                 >
-                  <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-zinc-200 dark:bg-zinc-700">
+                  <div className="relative w-full aspect-square overflow-hidden bg-muted">
                     {thumb ? <img src={thumb} alt={recipe.title} className="h-full w-full object-cover" /> : null}
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-foreground">{recipe.title}</p>
-                    {recipe.tags?.length ? (
-                      <p className="truncate text-xs text-muted-foreground">{recipe.tags.slice(0, 2).map((tag) => `#${tag}`).join(" ")}</p>
-                    ) : null}
+                  <div className="p-2">
+                    <p className="line-clamp-2 text-xs font-semibold text-foreground">{recipe.title}</p>
+                    <div className="mt-1.5 flex items-center gap-1">
+                      <button
+                        onClick={() => onPreviewRecipe(recipe)}
+                        className="flex-1 flex items-center justify-center gap-1 py-1 rounded-md bg-muted hover:bg-muted/80 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <Eye className="h-3 w-3" />
+                        预览
+                      </button>
+                      <button
+                        onClick={() => onAddToTodayMenu(recipe)}
+                        className={`flex-1 flex items-center justify-center gap-1 py-1 rounded-md text-[11px] font-medium transition-all ${
+                          inMenu
+                            ? "bg-primary/10 text-primary border border-primary/20"
+                            : "bg-primary text-primary-foreground hover:bg-primary/90"
+                        }`}
+                      >
+                        <Plus className="h-3 w-3" />
+                        {inMenu ? "已加入" : "加入"}
+                      </button>
+                    </div>
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>

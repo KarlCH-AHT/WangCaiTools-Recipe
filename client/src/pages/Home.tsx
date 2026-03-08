@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
-import { Plus, Clock, Users, Search, X, Heart, Grid3x3, List, Grid2x2, Sparkles, UtensilsCrossed, Upload, ChevronDown, Check } from "lucide-react";
+import { Plus, Clock, Users, Search, X, Heart, Grid3x3, List, Grid2x2, Sparkles, UtensilsCrossed, Upload, ChevronDown, Check, Moon, Sun } from "lucide-react";
 import { useRecipes } from "@/contexts/RecipeContext";
 import { useTranslation } from "@/hooks/useTranslation";
 import AddRecipeDialog from "@/components/AddRecipeDialog";
@@ -10,6 +10,7 @@ import ImportRecipeDialog from "@/components/ImportRecipeDialog";
 import AIGenerateRecipeDialog from "@/components/AIGenerateRecipeDialog";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
+import { useTheme } from "@/contexts/ThemeContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -213,6 +214,7 @@ export default function Home() {
   const { user, loading: authLoading } = useAuth();
   const { recipes, searchRecipes, toggleFavorite, loading: recipesLoading } = useRecipes();
   const { language, setLanguage } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
 
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showAIDialog, setShowAIDialog] = useState(false);
@@ -373,6 +375,16 @@ export default function Home() {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
+
+              {/* One-click dark mode */}
+              <button
+                onClick={() => toggleTheme?.()}
+                className="flex items-center justify-center w-8 h-8 rounded-lg bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+                aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                title={theme === "dark" ? "浅色模式" : "深色模式"}
+              >
+                {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </button>
             </div>
           </div>
         </div>

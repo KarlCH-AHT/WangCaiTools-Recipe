@@ -5,6 +5,14 @@ const UNITS = [
   "g",
   "ml",
   "l",
+  "tbsp",
+  "tsp",
+  "piece",
+  "pieces",
+  "tablespoon",
+  "tablespoons",
+  "teaspoon",
+  "teaspoons",
   "勺",
   "茶匙",
   "汤匙",
@@ -19,9 +27,23 @@ const UNITS = [
   "只",
 ] as const;
 
-const UNIT_PATTERN = UNITS.slice().sort((a, b) => b.length - a.length).join("|");
-
 const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const UNIT_PATTERN = UNITS.slice()
+  .sort((a, b) => b.length - a.length)
+  .map((u) => escapeRegExp(u))
+  .join("|");
+
+function normalizeParsedUnit(unit: string | undefined): string | null {
+  if (!unit) return null;
+  const normalized = unit.toLowerCase().replace(/\.$/, "");
+  if (normalized === "tablespoon" || normalized === "tablespoons") return "tbsp";
+  if (normalized === "teaspoon" || normalized === "teaspoons") return "tsp";
+  if (normalized === "pieces") return "piece";
+  return normalized === "tbsp" || normalized === "tsp" || normalized === "piece"
+    ? normalized
+    : unit;
+}
 
 export function parseIngredientLine(text: string): RecipeIngredientParsed | null {
   const input = text
@@ -54,7 +76,7 @@ export function parseIngredientLine(text: string): RecipeIngredientParsed | null
   }
 
   // e.g. 牛肉 300g / 鸡蛋 2个 / 蒜 2瓣 切末
-  const regex = new RegExp(`^(.+?)\\s+(\\d+(?:\\.\\d+)?)\\s*(${UNIT_PATTERN})?(?:\\s+(.+))?$`);
+  const regex = new RegExp(`^(.+?)\\s+(\\d+(?:\\.\\d+)?)\\s*(${UNIT_PATTERN})?(?:\\s+(.+))?$`, "i");
   const match = input.match(regex);
   if (match) {
     const [, name, amountRaw, unit, note] = match;
@@ -63,42 +85,42 @@ export function parseIngredientLine(text: string): RecipeIngredientParsed | null
     return {
       name: name.trim(),
       amount,
-      unit: unit || null,
+      unit: normalizeParsedUnit(unit),
       note: note?.trim() || undefined,
     };
   }
 
   // e.g. 牛肉300g / 鸡蛋2个 / 生抽1勺 / 2勺 生抽
-  const compactTailMatch = input.match(new RegExp(`^(.+?)(\\d+(?:\\.\\d+)?)\\s*(${UNIT_PATTERN})(?:\\s+(.+))?$`));
+  const compactTailMatch = input.match(new RegExp(`^(.+?)(\\d+(?:\\.\\d+)?)\\s*(${UNIT_PATTERN})(?:\\s+(.+))?$`, "i"));
   if (compactTailMatch) {
     const [, name, amountRaw, unit, note] = compactTailMatch;
     return {
       name: name.trim(),
       amount: Number(amountRaw),
-      unit,
+      unit: normalizeParsedUnit(unit),
       note: note?.trim() || undefined,
     };
   }
 
-  const prefixMatch = input.match(new RegExp(`^(\\d+(?:\\.\\d+)?)\\s*(${UNIT_PATTERN})\\s+(.+?)(?:\\s+(.+))?$`));
+  const prefixMatch = input.match(new RegExp(`^(\\d+(?:\\.\\d+)?)\\s*(${UNIT_PATTERN})\\s+(.+?)(?:\\s+(.+))?$`, "i"));
   if (prefixMatch) {
     const [, amountRaw, unit, name, note] = prefixMatch;
     return {
       name: name.trim(),
       amount: Number(amountRaw),
-      unit,
+      unit: normalizeParsedUnit(unit),
       note: note?.trim() || undefined,
     };
   }
 
   // e.g. 5根葱 / 5根 葱
-  const prefixNoSpaceMatch = input.match(new RegExp(`^(\\d+(?:\\.\\d+)?)\\s*(${UNIT_PATTERN})(.+)$`));
+  const prefixNoSpaceMatch = input.match(new RegExp(`^(\\d+(?:\\.\\d+)?)\\s*(${UNIT_PATTERN})(.+)$`, "i"));
   if (prefixNoSpaceMatch) {
     const [, amountRaw, unit, name] = prefixNoSpaceMatch;
     return {
       name: name.trim(),
       amount: Number(amountRaw),
-      unit,
+      unit: normalizeParsedUnit(unit),
     };
   }
 

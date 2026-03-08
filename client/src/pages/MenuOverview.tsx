@@ -42,7 +42,7 @@ function ImagePlaceholder({ title }: { title: string }) {
 export default function MenuOverview() {
   const [, navigate] = useLocation();
   const { recipes, toggleFavorite } = useRecipes();
-  const { dailyMenu, addMenuItem } = useDailyMenu();
+  const { dailyMenu, addMenuItem, removeMenuItem } = useDailyMenu();
   const t = useTranslation();
 
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -91,6 +91,25 @@ export default function MenuOverview() {
   }, [recipes, selectedCategory, showFavoritesOnly, selectedTags, sortType]);
 
   const isInMenu = (recipeId: string) => dailyMenu.items.some((item) => item.recipeId === recipeId);
+  const menuRecipes = useMemo(
+    () =>
+      dailyMenu.items
+        .map((item) => {
+          const recipe = recipes.find((r) => r.id === item.recipeId);
+          if (!recipe) return null;
+          return { recipe, servings: item.servings };
+        })
+        .filter(Boolean) as { recipe: any; servings: number }[],
+    [dailyMenu.items, recipes]
+  );
+  const totalCookTime = useMemo(
+    () => menuRecipes.reduce((sum, item) => sum + (item.recipe.cookTime || 0), 0),
+    [menuRecipes]
+  );
+  const totalServings = useMemo(
+    () => menuRecipes.reduce((sum, item) => sum + (item.servings || item.recipe.servings || 0), 0),
+    [menuRecipes]
+  );
 
   const handleAddToMenu = (recipe: any, e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -119,7 +138,7 @@ export default function MenuOverview() {
     : t("all") || "全部";
 
   return (
-    <div className="min-h-screen bg-background pb-10">
+    <div className="min-h-screen bg-gradient-to-b from-cyan-50/60 via-background to-background pb-10 dark:from-cyan-950/20">
       {/* ── Header ── */}
       <header className="bg-background/80 backdrop-blur-md sticky top-0 z-50 border-b border-border/50">
         <div className="container py-3">
@@ -137,26 +156,47 @@ export default function MenuOverview() {
             </div>
             <button
               onClick={() => navigate("/today")}
-              className="flex items-center gap-2 px-3.5 py-2 bg-primary text-primary-foreground rounded-xl text-xs font-semibold transition-all hover:bg-primary/90 active:scale-95"
+              className="flex items-center gap-2 px-3.5 py-2 bg-cyan-600 text-white rounded-xl text-xs font-semibold transition-all hover:bg-cyan-500 active:scale-95"
             >
               <UtensilsCrossed className="w-3.5 h-3.5" />
-              <span>{t("todayMenu")}</span>
-              {dailyMenu.items.length > 0 && (
-                <span className="flex items-center justify-center w-4.5 h-4.5 rounded-full bg-white/25 text-[10px] font-bold">
-                  {dailyMenu.items.length}
-                </span>
-              )}
+              <span>开始烹饪</span>
             </button>
           </div>
         </div>
       </header>
 
-      <main className="container py-4 space-y-3">
-        {/* Random recommendation */}
-        <RandomRecommendation recipes={recipes} onSelectRecipe={handleAddToMenu} />
+      <main className="container py-4 space-y-4">
+        <section className="rounded-2xl border border-cyan-200/70 bg-white/85 p-4 shadow-sm dark:border-cyan-900/60 dark:bg-zinc-900/70">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold text-foreground">今日菜单工作台</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">计划导向视图，区别于首页菜谱收藏浏览</p>
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <span className="rounded-full bg-cyan-100 px-2.5 py-1 font-medium text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300">
+                已选 {menuRecipes.length} 道
+              </span>
+              <span className="rounded-full bg-cyan-100 px-2.5 py-1 font-medium text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300">
+                约 {totalCookTime} 分钟
+              </span>
+              <span className="rounded-full bg-cyan-100 px-2.5 py-1 font-medium text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300">
+                总份量 {totalServings || 0}
+              </span>
+            </div>
+          </div>
+        </section>
 
-        {/* ── Filter row ── */}
-        <div className="flex items-center gap-2">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <section className="space-y-3">
+            <RandomRecommendation
+              recipes={recipes}
+              onAddToTodayMenu={(recipe) => handleAddToMenu(recipe)}
+              onPreviewRecipe={(recipe) => openPreview(recipe)}
+              isInTodayMenu={isInMenu}
+            />
+
+            {/* ── Filter row ── */}
+            <div className="flex items-center gap-2">
           {/* Category / Favorites dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -231,11 +271,11 @@ export default function MenuOverview() {
               </button>
             ))}
           </div>
-        </div>
+            </div>
 
         {/* ── Tag multi-select row ── */}
-        {allTags.length > 0 && (
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5" style={{ scrollbarWidth: "none" }}>
+            {allTags.length > 0 && (
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5" style={{ scrollbarWidth: "none" }}>
             {allTags.map((tag) => (
               <button
                 key={tag}
@@ -258,16 +298,16 @@ export default function MenuOverview() {
                 清除
               </button>
             )}
-          </div>
-        )}
+              </div>
+            )}
 
         {/* Recipe count */}
-        {displayRecipes.length > 0 && (
-          <p className="text-xs text-muted-foreground">{displayRecipes.length} 道菜谱</p>
-        )}
+            {displayRecipes.length > 0 && (
+              <p className="text-xs text-muted-foreground">{displayRecipes.length} 道候选菜谱</p>
+            )}
 
         {/* ── Empty state ── */}
-        {displayRecipes.length === 0 ? (
+            {displayRecipes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-50 to-amber-100 flex items-center justify-center mb-5 shadow-sm">
               <span className="text-4xl">🍽️</span>
@@ -277,7 +317,7 @@ export default function MenuOverview() {
               {selectedCategory ? `分类「${selectedCategory}」下暂无菜谱` : "还没有菜谱"}
             </p>
           </div>
-        ) : viewMode === "grid" ? (
+            ) : viewMode === "grid" ? (
           /* ── Grid view ── */
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-4">
             {displayRecipes.map((recipe) => {
@@ -343,7 +383,7 @@ export default function MenuOverview() {
               );
             })}
           </div>
-        ) : viewMode === "thumbnail" ? (
+            ) : viewMode === "thumbnail" ? (
           /* ── Thumbnail view ── */
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
             {displayRecipes.map((recipe) => {
@@ -381,7 +421,7 @@ export default function MenuOverview() {
               );
             })}
           </div>
-        ) : (
+            ) : (
           /* ── List view ── */
           <div className="space-y-2">
             {displayRecipes.map((recipe) => {
@@ -433,7 +473,54 @@ export default function MenuOverview() {
               );
             })}
           </div>
-        )}
+            )}
+          </section>
+
+          <aside className="lg:sticky lg:top-[88px] h-fit space-y-3">
+            <div className="rounded-2xl border border-cyan-200/70 bg-white/90 p-3 dark:border-cyan-900/60 dark:bg-zinc-900/70">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold">已选菜单</h3>
+                <button onClick={() => navigate("/today")} className="text-xs text-cyan-700 hover:text-cyan-600">
+                  打开
+                </button>
+              </div>
+              <div className="mt-2 space-y-2 max-h-[280px] overflow-auto pr-1">
+                {menuRecipes.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">还没有加入菜谱</p>
+                ) : (
+                  menuRecipes.map(({ recipe, servings }) => (
+                    <div key={recipe.id} className="rounded-xl border bg-cyan-50/40 p-2 dark:bg-zinc-800/70">
+                      <p className="text-sm font-medium truncate">{recipe.title}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{servings} 人份 · {recipe.cookTime || 0} 分钟</p>
+                      <div className="mt-2 flex gap-1.5">
+                        <button onClick={() => openPreview(recipe)} className="flex-1 rounded-lg border bg-white px-2 py-1 text-xs dark:bg-zinc-900/40">预览</button>
+                        <button onClick={() => removeMenuItem(recipe.id)} className="rounded-lg border px-2 py-1 text-xs text-muted-foreground">移除</button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-cyan-200/70 bg-white/90 p-3 dark:border-cyan-900/60 dark:bg-zinc-900/70">
+              <h3 className="text-sm font-semibold">执行时间线</h3>
+              <div className="mt-2 space-y-2">
+                {menuRecipes.slice(0, 5).map(({ recipe }, idx) => (
+                  <div key={recipe.id} className="flex items-start gap-2">
+                    <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-cyan-600 text-[10px] font-semibold text-white">
+                      {idx + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-medium">{recipe.title}</p>
+                      <p className="text-[11px] text-muted-foreground">{recipe.cookTime || 0} 分钟</p>
+                    </div>
+                  </div>
+                ))}
+                {menuRecipes.length === 0 && <p className="text-xs text-muted-foreground">加入菜谱后自动生成流程</p>}
+              </div>
+            </div>
+          </aside>
+        </div>
       </main>
 
       {/* Dialogs */}

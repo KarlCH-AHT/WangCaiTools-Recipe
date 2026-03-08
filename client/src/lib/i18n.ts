@@ -34,6 +34,7 @@ export const translations: Record<Language, Record<string, string>> = {
     deleteConfirm: "Möchtest du dieses Rezept wirklich löschen?",
     information: "Informationen",
     prepTime: "Vorbereitung",
+    cookTime: "Kochzeit",
 
     // Add/Edit Recipe
     createNewRecipe: "Neues Rezept erstellen",
@@ -138,6 +139,7 @@ export const translations: Record<Language, Record<string, string>> = {
     selectPortionsBeforeCooking: "Wähle die Portionsgröße, bevor du mit dem Kochen beginnst",
     confirm: "Bestätigen",
     ingredients: "Zutaten",
+    steps: "Schritte",
     instructions: "Anleitung",
     importRecipes: "Rezepte importieren",
     weeklyMenu: "Wochenmenü",
@@ -226,6 +228,7 @@ export const translations: Record<Language, Record<string, string>> = {
     deleteConfirm: "确定要删除这个菜谱吗？",
     information: "信息",
     prepTime: "准备时间",
+    cookTime: "烹饪时间",
 
     // Add/Edit Recipe
     createNewRecipe: "创建新菜谱",
@@ -330,6 +333,7 @@ export const translations: Record<Language, Record<string, string>> = {
     selectPortionsBeforeCooking: "在开始烹饪前选择份量以获得正确的购物清单",
     confirm: "确认",
     ingredients: "食材",
+    steps: "步骤",
     instructions: "步骤",
     importRecipes: "导入菜谱",
     weeklyMenu: "周菜单",
@@ -419,6 +423,7 @@ export const translations: Record<Language, Record<string, string>> = {
     deleteConfirm: "Are you sure you want to delete this recipe?",
     information: "Information",
     prepTime: "Prep time",
+    cookTime: "Cook time",
 
     // Add/Edit Recipe
     createNewRecipe: "Create new recipe",
@@ -523,6 +528,7 @@ export const translations: Record<Language, Record<string, string>> = {
     selectPortionsBeforeCooking: "Select portion size before cooking to get the correct shopping list",
     confirm: "Confirm",
     ingredients: "Ingredients",
+    steps: "Steps",
     instructions: "Instructions",
     importRecipes: "Import Recipes",
     weeklyMenu: "Weekly Menu",
