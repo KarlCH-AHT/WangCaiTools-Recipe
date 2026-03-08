@@ -59,7 +59,10 @@ export default function AIGenerateRecipeDialog({
     onError: (error) => {
       setIsLoading(false);
       console.error("Failed to generate recipe:", error);
-      alert(t("failedToGenerateRecipe") || "Failed to generate recipe");
+      const message =
+        error.message ||
+        (t("failedToGenerateRecipe") || "Failed to generate recipe");
+      alert(message);
     },
   });
 

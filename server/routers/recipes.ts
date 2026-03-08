@@ -3,6 +3,7 @@ import { invokeLLM } from "../_core/llm";
 // generateImage import removed - now using Unsplash web search instead
 import { storagePut } from "../storage";
 import { protectedProcedure, router } from "../_core/trpc";
+import { TRPCError } from "@trpc/server";
 import {
   createRecipe,
   getRecipesByUserId,
@@ -605,18 +606,29 @@ Return ONLY valid JSON with this exact structure (no tags field):
   "steps": [{"number": 1, "description": "step description in detected language"}]
 }`;
 
-      const response = await invokeLLM({
-        messages: [
-          {
-            role: "system",
-            content: "You are a professional chef. Generate recipes in valid JSON format only. Always detect the language of the dish name provided by the user and write all recipe content (title, description, ingredients, steps) in that exact same language.",
-          },
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-      });
+      let response;
+      try {
+        response = await invokeLLM({
+          messages: [
+            {
+              role: "system",
+              content: "You are a professional chef. Generate recipes in valid JSON format only. Always detect the language of the dish name provided by the user and write all recipe content (title, description, ingredients, steps) in that exact same language.",
+            },
+            {
+              role: "user",
+              content: prompt,
+            },
+          ],
+          responseFormat: { type: "json_object" },
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unknown AI provider error";
+        console.error("[AI Recipe] LLM request failed:", message);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `AI request failed: ${message}`,
+        });
+      }
 
       const responseContent = response.choices[0]?.message.content;
       const responseText = typeof responseContent === 'string' ? responseContent : "";
@@ -627,7 +639,10 @@ Return ONLY valid JSON with this exact structure (no tags field):
         recipeData = JSON.parse(jsonMatch[0]);
       } catch (error) {
         console.error("Failed to parse AI response:", responseText);
-        throw new Error("Failed to parse recipe data from AI");
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "AI returned invalid JSON. Try another model or API endpoint.",
+        });
       }
 
       // Search for a food photo using Wikipedia Commons API (free, no key needed)
