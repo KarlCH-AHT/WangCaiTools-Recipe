@@ -16,6 +16,7 @@ import DailyMenuPage from "./pages/DailyMenuPage";
 import WeeklyMenuPage from "./pages/WeeklyMenuPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import ImmersiveCookingAssistant from "./pages/ImmersiveCookingAssistant";
 
 /**
  * Design Philosophy: Modern Minimalism
@@ -35,6 +36,8 @@ function Router() {
       <Route path={"/menu"} component={MenuOverview} />
       <Route path={"/today"} component={DailyMenuPage} />
       <Route path={"/weekly"} component={WeeklyMenuPage} />
+      <Route path={"/immersive-cooking/:id"} component={ImmersiveCookingAssistant} />
+      <Route path={"/immersive-cooking"} component={ImmersiveCookingAssistant} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

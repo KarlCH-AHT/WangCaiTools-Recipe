@@ -19,6 +19,37 @@ import { COOKIE_NAME, ONE_YEAR_MS } from "../shared/const";
 import type { User } from "../drizzle/schema";
 
 // ── JWT helpers ──────────────────────────────────────────────────────────────
+type DevMockUser = User & { passwordHash: string };
+
+const devUsersByEmail = new Map<string, DevMockUser>();
+const devUsersByOpenId = new Map<string, DevMockUser>();
+let devUserSeq = 1;
+
+function isDevNoDbMode() {
+  if (process.env.AUTH_DEV_NO_DB === "1") return true;
+  return !ENV.isProduction && !process.env.DATABASE_URL;
+}
+
+function makeDevUser(params: {
+  openId: string;
+  email: string;
+  name: string;
+  passwordHash: string;
+}): DevMockUser {
+  const now = new Date();
+  return {
+    id: devUserSeq++,
+    openId: params.openId,
+    name: params.name,
+    email: params.email,
+    passwordHash: params.passwordHash,
+    loginMethod: "email",
+    role: "user",
+    createdAt: now,
+    updatedAt: now,
+    lastSignedIn: now,
+  };
+}
 
 function getSecret(): Uint8Array {
   return new TextEncoder().encode(ENV.cookieSecret);
@@ -46,6 +77,9 @@ export async function authenticateRequest(req: Request): Promise<User | null> {
   const token = cookies[COOKIE_NAME];
   const openId = await verifySession(token);
   if (!openId) return null;
+  if (isDevNoDbMode()) {
+    return devUsersByOpenId.get(openId) ?? null;
+  }
   return (await db.getUserByOpenId(openId)) ?? null;
 }
 
@@ -88,6 +122,30 @@ export function registerAuthRoutes(app: Express) {
     const { email, password, name } = parsed.data;
 
     try {
+      if (isDevNoDbMode()) {
+        const existing = devUsersByEmail.get(email);
+        if (existing) {
+          res.status(409).json({ error: "Email already registered" });
+          return;
+        }
+
+        const passwordHash = await bcrypt.hash(password, 12);
+        const openId = nanoid();
+        const user = makeDevUser({
+          openId,
+          email,
+          name: name ?? email.split("@")[0],
+          passwordHash,
+        });
+        devUsersByEmail.set(email, user);
+        devUsersByOpenId.set(openId, user);
+
+        const token = await signSession(openId);
+        res.cookie(COOKIE_NAME, token, { ...cookieOptions(req), maxAge: ONE_YEAR_MS });
+        res.json({ user, devNoDbMode: true });
+        return;
+      }
+
       const existing = await db.getUserByEmail(email);
       if (existing) {
         res.status(409).json({ error: "Email already registered" });
@@ -126,6 +184,29 @@ export function registerAuthRoutes(app: Express) {
     const { email, password } = parsed.data;
 
     try {
+      if (isDevNoDbMode()) {
+        const user = devUsersByEmail.get(email);
+        if (!user || !user.passwordHash) {
+          res.status(401).json({ error: "Invalid email or password" });
+          return;
+        }
+
+        const valid = await bcrypt.compare(password, user.passwordHash);
+        if (!valid) {
+          res.status(401).json({ error: "Invalid email or password" });
+          return;
+        }
+
+        user.lastSignedIn = new Date();
+        const token = await signSession(user.openId);
+        res.cookie(COOKIE_NAME, token, { ...cookieOptions(req), maxAge: ONE_YEAR_MS });
+        res.json({
+          user: { id: user.id, name: user.name, email: user.email, role: user.role },
+          devNoDbMode: true,
+        });
+        return;
+      }
+
       const user = await db.getUserByEmail(email);
       if (!user || !user.passwordHash) {
         res.status(401).json({ error: "Invalid email or password" });

@@ -140,7 +140,18 @@ function IngredientItem({ name, amount, unit, checked, onToggle, formatUnit }: {
         {formatUnit(unit)}
       </span>
       <span className={`text-sm leading-relaxed ${checked ? "line-through text-muted-foreground" : "text-foreground"}`}>
-        {name}
+        {unit === "__raw__"
+          ? name.split(/(\d+(?:[.,]\d+)?\s*(?:kg|g|mg|ml|l|EL|TL|个|只|根|勺|茶匙|汤匙|克|少许|适量))/gi).map((part, idx) => {
+              const isToken = /(\d+(?:[.,]\d+)?\s*(?:kg|g|mg|ml|l|EL|TL|个|只|根|勺|茶匙|汤匙|克|少许|适量))/i.test(part);
+              return isToken ? (
+                <span key={`${part}-${idx}`} className="font-semibold text-primary">
+                  {part}
+                </span>
+              ) : (
+                <span key={`${part}-${idx}`}>{part}</span>
+              );
+            })
+          : name}
       </span>
     </li>
   );
@@ -221,6 +232,18 @@ export default function RecipeDetail() {
     : recipe.imageUrl ? [recipe.imageUrl] : [];
 
   const sortedSteps = [...recipe.steps].sort((a, b) => (a.number ?? 0) - (b.number ?? 0));
+  const groupedSteps = (() => {
+    let localIndex = 1;
+    return sortedSteps.map((step) => {
+      const isSection = step.description.trim().endsWith(":");
+      if (isSection) {
+        localIndex = 1;
+        return { step, isSection: true, displayIndex: 0 };
+      }
+      const displayIndex = localIndex++;
+      return { step, isSection: false, displayIndex };
+    });
+  })();
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -343,6 +366,14 @@ export default function RecipeDetail() {
               </div>
               <ul className="space-y-0.5">
                 {recipe.ingredients.map((ingredient) => {
+                  const isSection = ingredient.name.trim().endsWith(":");
+                  if (isSection) {
+                    return (
+                      <li key={ingredient.id} className="px-2 py-2 text-sm font-semibold text-foreground/90">
+                        {ingredient.name.replace(/:\s*$/, "")}
+                      </li>
+                    );
+                  }
                   const scaledAmount = Math.round(ingredient.amount * portionMultiplier * 100) / 100;
                   return (
                     <IngredientItem
@@ -374,19 +405,25 @@ export default function RecipeDetail() {
                 {t("steps") || "步骤"}
               </h2>
               <div className="space-y-6">
-                {sortedSteps.map((step, index) => (
+                {groupedSteps.map(({ step, isSection, displayIndex }, index) => (
                   <div key={step.id} className="grid grid-cols-[32px_1fr] gap-4">
                     <div className="flex flex-col items-center gap-1">
-                      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center flex-shrink-0">
-                        {index + 1}
-                      </div>
-                      {index < sortedSteps.length - 1 && (
+                      {isSection ? (
+                        <div className="w-8" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center flex-shrink-0">
+                          {displayIndex}
+                        </div>
+                      )}
+                      {index < groupedSteps.length - 1 && (
                         <div className="w-px flex-1 min-h-[16px] bg-border/60" />
                       )}
                     </div>
                     <div className="pb-2">
-                      <p className="text-sm text-foreground leading-relaxed pt-1">{step.description}</p>
-                      {step.duration && (
+                      <p className={`leading-relaxed pt-1 ${isSection ? "text-base font-semibold text-foreground" : "text-sm text-foreground"}`}>
+                        {isSection ? step.description.replace(/:\s*$/, "") : step.description}
+                      </p>
+                      {!isSection && step.duration && (
                         <span className="inline-flex items-center gap-1 mt-2 text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
                           ⏱ {step.duration} {t("min") || "分钟"}
                         </span>

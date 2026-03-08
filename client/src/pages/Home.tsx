@@ -42,10 +42,10 @@ function FavoriteBtn({ isFavorite, onToggle }: { isFavorite: boolean; onToggle: 
   return (
     <button
       onClick={onToggle}
-      className="flex items-center justify-center w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm shadow-sm transition-all hover:scale-110 active:scale-95"
+      className="flex items-center justify-center w-8 h-8 rounded-full bg-white/70 backdrop-blur-sm border border-black/5 transition-all hover:bg-white/85 active:scale-95"
       aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
     >
-      <Heart className={`w-4 h-4 transition-colors ${isFavorite ? "fill-red-500 text-red-500" : "text-gray-400"}`} />
+      <Heart className={`w-4 h-4 transition-colors ${isFavorite ? "fill-red-400/80 text-red-400/80" : "text-gray-400/80"}`} />
     </button>
   );
 }
@@ -84,8 +84,25 @@ function GridCard({ recipe, onNavigate, onToggleFavorite }: { recipe: any; onNav
         <h3 className="font-semibold text-sm leading-snug line-clamp-2 text-foreground mb-1" style={{ letterSpacing: "-0.01em" }}>
           {recipe.title}
         </h3>
-        {recipe.description && (
-          <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed mb-1.5">{recipe.description}</p>
+        {recipe.tags?.length > 0 && (
+          <div className="mb-1.5 flex flex-wrap gap-1">
+            {recipe.tags.slice(0, 3).map((tag: string, idx: number) => (
+              <span
+                key={tag}
+                className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                  idx % 4 === 0
+                    ? "border border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300"
+                    : idx % 4 === 1
+                      ? "border border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-300"
+                      : idx % 4 === 2
+                        ? "border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300"
+                        : "border border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300"
+                }`}
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
         )}
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           {recipe.servings && <span className="flex items-center gap-1"><Users className="w-3 h-3" />{recipe.servings}</span>}
@@ -137,8 +154,25 @@ function ListRow({ recipe, onNavigate, onToggleFavorite }: { recipe: any; onNavi
       </div>
       <div className="flex-1 min-w-0">
         <h3 className="font-semibold text-sm truncate text-foreground" style={{ letterSpacing: "-0.01em" }}>{recipe.title}</h3>
-        {recipe.description && (
-          <p className="text-xs text-muted-foreground truncate mt-0.5">{recipe.description}</p>
+        {recipe.tags?.length > 0 && (
+          <div className="mt-0.5 flex flex-wrap gap-1">
+            {recipe.tags.slice(0, 3).map((tag: string, idx: number) => (
+              <span
+                key={tag}
+                className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                  idx % 4 === 0
+                    ? "border border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300"
+                    : idx % 4 === 1
+                      ? "border border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-300"
+                      : idx % 4 === 2
+                        ? "border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300"
+                        : "border border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300"
+                }`}
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
         )}
         <div className="flex items-center gap-2.5 mt-1 text-xs text-muted-foreground">
           {recipe.servings && <span className="flex items-center gap-0.5"><Users className="w-3 h-3" />{recipe.servings}</span>}

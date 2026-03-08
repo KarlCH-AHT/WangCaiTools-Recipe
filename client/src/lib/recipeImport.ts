@@ -1,5 +1,6 @@
 import { Recipe } from "@/types/recipe";
 import { nanoid } from "nanoid";
+import { RAW_UNIT } from "@/utils/recipeLineEditors";
 
 export const importRecipesFromJSON = (jsonString: string): Recipe[] => {
   try {
@@ -21,11 +22,11 @@ export const importRecipesFromJSON = (jsonString: string): Recipe[] => {
         id: ing.id || nanoid(),
         name: ing.name || "",
         amount: ing.amount || 0,
-        unit: ing.unit || "",
+        unit: ing.unit || RAW_UNIT,
       })),
       steps: (recipe.steps || []).map((step: any, idx: number) => ({
         id: step.id || nanoid(),
-        number: step.number || idx,
+        number: step.number || idx + 1,
         description: step.description || step || "",
         duration: step.duration,
       })),
@@ -93,7 +94,7 @@ export const importRecipesFromCSV = (csvString: string): Recipe[] => {
         // Ingredient format: amount,unit,name
         currentIngredients.push({
           amount: parseFloat(values[8]) || 0,
-          unit: values[9] || "",
+          unit: values[9] || RAW_UNIT,
           name: values[10] || "",
         });
       }

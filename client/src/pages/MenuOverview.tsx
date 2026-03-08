@@ -298,9 +298,9 @@ export default function MenuOverview() {
                     {/* Favorite */}
                     <button
                       onClick={(e) => { e.stopPropagation(); toggleFavorite(recipe.id); }}
-                      className="absolute top-2.5 left-2.5 flex items-center justify-center w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm shadow-sm transition-all hover:scale-110 active:scale-95"
+                      className="absolute top-2.5 left-2.5 flex items-center justify-center w-8 h-8 rounded-full bg-white/70 backdrop-blur-sm border border-black/5 transition-all hover:bg-white/85 active:scale-95"
                     >
-                      <Heart className={`w-4 h-4 ${recipe.isFavorite ? "fill-red-500 text-red-500" : "text-gray-400"}`} />
+                      <Heart className={`w-4 h-4 ${recipe.isFavorite ? "fill-red-400/80 text-red-400/80" : "text-gray-400/80"}`} />
                     </button>
                     {recipe.category && (
                       <div className="absolute bottom-2.5 left-2.5">
@@ -360,9 +360,9 @@ export default function MenuOverview() {
                     {/* Favorite */}
                     <button
                       onClick={(e) => { e.stopPropagation(); toggleFavorite(recipe.id); }}
-                      className="absolute top-1.5 left-1.5 flex items-center justify-center w-7 h-7 rounded-full bg-white/90 backdrop-blur-sm shadow-sm transition-all hover:scale-110 active:scale-95"
+                      className="absolute top-1.5 left-1.5 flex items-center justify-center w-7 h-7 rounded-full bg-white/70 backdrop-blur-sm border border-black/5 transition-all hover:bg-white/85 active:scale-95"
                     >
-                      <Heart className={`w-3.5 h-3.5 ${recipe.isFavorite ? "fill-red-500 text-red-500" : "text-gray-400"}`} />
+                      <Heart className={`w-3.5 h-3.5 ${recipe.isFavorite ? "fill-red-400/80 text-red-400/80" : "text-gray-400/80"}`} />
                     </button>
                     {/* Add to menu overlay button */}
                     <button
@@ -416,9 +416,9 @@ export default function MenuOverview() {
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     <button
                       onClick={(e) => { e.stopPropagation(); toggleFavorite(recipe.id); }}
-                      className="flex items-center justify-center w-8 h-8 rounded-full bg-muted transition-all hover:scale-110 active:scale-95"
+                      className="flex items-center justify-center w-8 h-8 rounded-full bg-white/70 border border-black/5 transition-all hover:bg-white/85 active:scale-95"
                     >
-                      <Heart className={`w-4 h-4 ${recipe.isFavorite ? "fill-red-500 text-red-500" : "text-gray-400"}`} />
+                      <Heart className={`w-4 h-4 ${recipe.isFavorite ? "fill-red-400/80 text-red-400/80" : "text-gray-400/80"}`} />
                     </button>
                     <button
                       onClick={(e) => handleAddToMenu(recipe, e)}

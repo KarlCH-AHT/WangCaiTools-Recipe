@@ -111,6 +111,23 @@ export default function CookingMode() {
     return highlightedText;
   };
 
+  const sortedSteps = useMemo(
+    () => [...(recipe?.steps ?? [])].sort((a, b) => (a.number ?? 0) - (b.number ?? 0)),
+    [recipe?.steps],
+  );
+  const groupedSteps = useMemo(() => {
+    let localIndex = 1;
+    return sortedSteps.map((step) => {
+      const isSection = step.description.trim().endsWith(":");
+      if (isSection) {
+        localIndex = 1;
+        return { step, isSection: true, displayIndex: 0 };
+      }
+      return { step, isSection: false, displayIndex: localIndex++ };
+    });
+  }, [sortedSteps]);
+  const actionableStepCount = groupedSteps.filter((item) => !item.isSection).length;
+
   if (!recipe) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -153,7 +170,7 @@ export default function CookingMode() {
             {recipe.title}
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            {completedSteps.size} / {recipe.steps.length} {t("stepsCompleted")}
+            {completedSteps.size} / {actionableStepCount} {t("stepsCompleted")}
           </p>
         </div>
       </header>
@@ -237,11 +254,28 @@ export default function CookingMode() {
                     className="w-5 h-5 rounded border-border cursor-pointer"
                   />
                   <div className="flex-1">
-                    <div className="font-semibold text-foreground">
-                      {ing.amount % 1 === 0 ? ing.amount : ing.amount.toFixed(1)}{" "}
-                      {fu(ing.unit)}
-                    </div>
-                    <div className="text-sm text-muted-foreground">{ing.name}</div>
+                    {ing.unit === "__raw__" ? (
+                      <div className="text-sm text-foreground">
+                        {ing.name.split(/(\d+(?:[.,]\d+)?\s*(?:kg|g|mg|ml|l|EL|TL|个|只|根|勺|茶匙|汤匙|克|少许|适量))/gi).map((part, idx) => {
+                          const isToken = /(\d+(?:[.,]\d+)?\s*(?:kg|g|mg|ml|l|EL|TL|个|只|根|勺|茶匙|汤匙|克|少许|适量))/i.test(part);
+                          return isToken ? (
+                            <span key={`${part}-${idx}`} className="font-semibold text-primary">
+                              {part}
+                            </span>
+                          ) : (
+                            <span key={`${part}-${idx}`}>{part}</span>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <>
+                        <div className="font-semibold text-foreground">
+                          {ing.amount % 1 === 0 ? ing.amount : ing.amount.toFixed(1)}{" "}
+                          {fu(ing.unit)}
+                        </div>
+                        <div className="text-sm text-muted-foreground">{ing.name}</div>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}
@@ -315,7 +349,7 @@ export default function CookingMode() {
             {t("instructions")}
           </h2>
           <div className="space-y-4">
-            {[...recipe.steps].sort((a, b) => (a.number ?? 0) - (b.number ?? 0)).map((step) => (
+            {groupedSteps.map(({ step, isSection, displayIndex }) => (
               <Card
                 key={step.id}
                 className={`transition-all ${
@@ -326,35 +360,43 @@ export default function CookingMode() {
               >
                 <CardContent className="p-6">
                   <div className="flex gap-4">
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      onClick={() => toggleStep(step.id)}
-                      className={`flex-shrink-0 w-12 h-12 rounded-full p-0 ${
-                        completedSteps.has(step.id)
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : ""
-                      }`}
-                    >
-                      {completedSteps.has(step.id) ? (
-                        <Check className="w-6 h-6" />
-                      ) : (
-                        <span className="text-lg font-bold">{step.number}</span>
-                      )}
-                    </Button>
+                    {isSection ? (
+                      <div className="w-12 flex-shrink-0" />
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        onClick={() => toggleStep(step.id)}
+                        className={`flex-shrink-0 w-12 h-12 rounded-full p-0 ${
+                          completedSteps.has(step.id)
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : ""
+                        }`}
+                      >
+                        {completedSteps.has(step.id) ? (
+                          <Check className="w-6 h-6" />
+                        ) : (
+                          <span className="text-lg font-bold">{displayIndex}</span>
+                        )}
+                      </Button>
+                    )}
 
                     <div className="flex-1">
                       <div
                         className={`text-lg leading-relaxed ${
+                          isSection ? "font-semibold" : ""
+                        } ${
                           completedSteps.has(step.id)
                             ? "line-through text-muted-foreground"
                             : "text-foreground"
                         }`}
                         dangerouslySetInnerHTML={{
-                          __html: highlightIngredients(step.description),
+                          __html: highlightIngredients(
+                            isSection ? step.description.replace(/:\s*$/, "") : step.description,
+                          ),
                         }}
                       />
-                      {step.duration && (
+                      {!isSection && step.duration && (
                         <div className="text-sm text-muted-foreground mt-2">
                           ⏱️ {step.duration} {t("min")}
                         </div>
@@ -368,7 +410,7 @@ export default function CookingMode() {
         </div>
 
         {/* Finished State */}
-        {completedSteps.size === recipe.steps.length && (
+        {actionableStepCount > 0 && completedSteps.size === actionableStepCount && (
           <Card className="mt-8 bg-primary/5 border-primary/50">
             <CardContent className="p-8 text-center">
               <div className="text-5xl mb-4">🎉</div>

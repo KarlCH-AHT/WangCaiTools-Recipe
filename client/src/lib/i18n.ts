@@ -585,5 +585,6 @@ export function t(key: string, language: Language): string {
  */
 export function formatUnit(unit: string, language: Language): string {
   if (!unit) return unit;
+  if (unit === "__raw__") return "";
   return translations[language]?.[unit] ?? unit;
 }

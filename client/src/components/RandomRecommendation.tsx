@@ -1,7 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shuffle } from "lucide-react";
+import { Shuffle, X } from "lucide-react";
 import { Recipe } from "@/types/recipe";
 import { useTranslation } from "@/hooks/useTranslation";
 
@@ -10,122 +9,103 @@ interface RandomRecommendationProps {
   onSelectRecipe: (recipe: Recipe) => void;
 }
 
-export default function RandomRecommendation({
-  recipes,
-  onSelectRecipe,
-}: RandomRecommendationProps) {
+export default function RandomRecommendation({ recipes, onSelectRecipe }: RandomRecommendationProps) {
   const t = useTranslation();
   const [recommendations, setRecommendations] = useState<Recipe[]>([]);
-  const [showRecommendation, setShowRecommendation] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [count, setCount] = useState(2);
 
-  const getRandomRecipes = () => {
+  const getRandomRecipes = (n: number) => {
     if (recipes.length === 0) return [];
-    
     const shuffled = [...recipes].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, Math.min(2, recipes.length));
+    return shuffled.slice(0, Math.min(n, recipes.length));
   };
 
-  const handleGetRecommendation = () => {
-    const newRecommendations = getRandomRecipes();
-    setRecommendations(newRecommendations);
-    setShowRecommendation(true);
+  const handleRecommend = () => {
+    setRecommendations(getRandomRecipes(count));
+    setExpanded(true);
   };
 
-  const handleTryAgain = () => {
-    handleGetRecommendation();
+  const handleClose = () => {
+    setExpanded(false);
+    setRecommendations([]);
   };
 
   if (recipes.length === 0) return null;
 
   return (
-    <div className="mb-8">
-      {!showRecommendation ? (
-        <Card className="border-primary/20 bg-primary/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shuffle className="w-5 h-5 text-primary" />
-              {t("randomRecommendation")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              {t("getRecommendation") || "Get random recipe suggestions"}
-            </p>
-            <Button
-              onClick={handleGetRecommendation}
-              className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
-            >
-              <Shuffle className="w-4 h-4" />
-              {t("getRecommendation")}
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <Shuffle className="w-5 h-5 text-primary" />
-              {t("randomRecommendation")}
-            </h2>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleTryAgain}
-              className="gap-1"
-            >
-              <Shuffle className="w-4 h-4" />
-              {t("tryAgain")}
-            </Button>
+    <div className="mb-4 rounded-2xl border bg-white/80 p-3 backdrop-blur-sm dark:bg-zinc-900/70">
+      {!expanded ? (
+        <div className="flex items-center gap-2">
+          <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <Shuffle className="h-4 w-4" />
+          </div>
+          <p className="flex-1 text-sm font-medium text-foreground">{t("randomRecommendation")}</p>
+
+          <div className="flex items-center rounded-full border bg-zinc-50 p-0.5 dark:bg-zinc-800">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button
+                key={n}
+                onClick={() => setCount(n)}
+                className={`h-6 w-6 rounded-full text-xs transition-colors ${
+                  count === n ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {n}
+              </button>
+            ))}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {recommendations.map((recipe) => (
-              <Card
-                key={recipe.id}
-                className="overflow-hidden hover:shadow-lg transition-shadow duration-200 group cursor-pointer"
+          <Button size="sm" onClick={handleRecommend} className="h-8 rounded-full px-3 text-xs">
+            <Shuffle className="mr-1 h-3.5 w-3.5" />
+            {t("getRecommendation")}
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Shuffle className="h-4 w-4 text-primary" />
+              <p className="text-sm font-medium">{t("randomRecommendation")}</p>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Button variant="outline" size="sm" onClick={handleRecommend} className="h-7 rounded-full px-2.5 text-xs">
+                {t("tryAgain")}
+              </Button>
+              <button
+                onClick={handleClose}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full border text-muted-foreground hover:text-foreground"
+                aria-label="Close recommendations"
               >
-                {recipe.imageUrl && (
-                  <div className="h-40 overflow-hidden bg-muted">
-                    <img
-                      src={recipe.imageUrl}
-                      alt={recipe.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                    />
-                  </div>
-                )}
-                <CardHeader>
-                  <CardTitle className="line-clamp-2">{recipe.title}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {recipe.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {recipe.description}
-                    </p>
-                  )}
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
 
-                  <div className="flex flex-wrap gap-2">
-                    {recipe.tags?.map((tag) => (
-                      <span
-                        key={tag}
-                        className="inline-block px-2 py-1 text-xs bg-primary/10 text-primary rounded-full"
-                      >
-                        {tag}
-                      </span>
-                    ))}
+          <div className="space-y-1.5">
+            {recommendations.map((recipe) => {
+              const thumb = recipe.images?.[0] || recipe.imageUrl;
+              return (
+                <button
+                  key={recipe.id}
+                  onClick={() => {
+                    onSelectRecipe(recipe);
+                    handleClose();
+                  }}
+                  className="flex w-full items-center gap-2 rounded-xl border bg-zinc-50 p-2 text-left transition-colors hover:bg-zinc-100 dark:bg-zinc-800/60 dark:hover:bg-zinc-800"
+                >
+                  <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-zinc-200 dark:bg-zinc-700">
+                    {thumb ? <img src={thumb} alt={recipe.title} className="h-full w-full object-cover" /> : null}
                   </div>
-
-                  <Button
-                    onClick={() => {
-                      onSelectRecipe(recipe);
-                      setShowRecommendation(false);
-                    }}
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                  >
-                    {t("addToMenu")}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-foreground">{recipe.title}</p>
+                    {recipe.tags?.length ? (
+                      <p className="truncate text-xs text-muted-foreground">{recipe.tags.slice(0, 2).map((tag) => `#${tag}`).join(" ")}</p>
+                    ) : null}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
