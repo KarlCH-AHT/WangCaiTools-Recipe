@@ -46,7 +46,7 @@ export async function authenticateRequest(req: Request): Promise<User | null> {
   const token = cookies[COOKIE_NAME];
   const openId = await verifySession(token);
   if (!openId) return null;
-  return db.getUserByOpenId(openId);
+  return (await db.getUserByOpenId(openId)) ?? null;
 }
 
 // ── Cookie options ────────────────────────────────────────────────────────────

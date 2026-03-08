@@ -8,14 +8,14 @@ A full-stack family recipe management app with AI recipe generation, weekly meal
 
 ## Features
 
-- **Recipe Management** – Create, edit, delete, and search recipes with ingredients, steps, images, and tags
-- **AI Generation** – Generate complete recipes from a dish name using any OpenAI-compatible LLM
-- **Link Import** – Import recipes from any URL (scrapes title, ingredients, and steps)
-- **Weekly & Daily Meal Planning** – Drag recipes into a weekly calendar and generate shopping lists
-- **Cooking Mode** – Step-by-step guided cooking view with ingredient highlighting
-- **PDF Export** – Export any recipe as a beautifully formatted PDF (supports Chinese, German, English)
-- **Multi-language UI** – Chinese (zh), German (de), and English (en)
-- **Email/Password Auth** – Self-contained JWT-based authentication (no OAuth provider required)
+- **Recipe Management** - Create, edit, delete, and search recipes with ingredients, steps, images, and tags
+- **AI Generation** - Generate complete recipes from a dish name using any OpenAI-compatible LLM
+- **Link Import** - Import recipes from any URL (scrapes title, ingredients, and steps)
+- **Weekly & Daily Meal Planning** - Drag recipes into a weekly calendar and generate shopping lists
+- **Cooking Mode** - Step-by-step guided cooking view with ingredient highlighting
+- **PDF Export** - Export any recipe as a beautifully formatted PDF (supports Chinese, German, English)
+- **Multi-language UI** - Chinese (zh), German (de), and English (en)
+- **Email/Password Auth** - Self-contained JWT-based authentication (no OAuth provider required)
 
 ---
 
@@ -46,6 +46,7 @@ Edit `.env` and fill in:
 |---|---|---|
 | `DATABASE_URL` | ✅ | MySQL connection string |
 | `JWT_SECRET` | ✅ | Random secret for session cookies |
+| `OWNER_OPEN_ID` | Optional | If set, this user becomes `admin` on upsert |
 | `OPENAI_API_KEY` | For AI features | OpenAI (or compatible) API key |
 | `OPENAI_BASE_URL` | Optional | Override API endpoint (default: OpenAI) |
 | `OPENAI_MODEL` | Optional | Model name (default: `gpt-4o-mini`) |
@@ -71,45 +72,14 @@ Open [http://localhost:3000](http://localhost:3000) and register your first acco
 
 ---
 
-## Project Structure
-
-```
-family-recipe-planner/
-├── client/                 # React frontend (Vite)
-│   ├── src/
-│   │   ├── _core/          # Auth hooks
-│   │   ├── components/     # Reusable UI components
-│   │   ├── contexts/       # React contexts (recipes, language, menu)
-│   │   ├── hooks/          # Custom hooks (translation, format)
-│   │   ├── lib/            # tRPC client, i18n, utilities
-│   │   └── pages/          # Page components
-│   └── index.html
-├── server/                 # Express + tRPC backend
-│   ├── _core/              # Server infrastructure (env, context, LLM, vite)
-│   ├── routers/            # tRPC feature routers
-│   ├── auth.ts             # Email/password JWT authentication
-│   ├── db.ts               # Database query helpers
-│   ├── routers.ts          # Root tRPC router
-│   └── storage.ts          # AWS S3 file storage
-├── drizzle/                # Database schema & migrations
-│   └── schema.ts
-├── shared/                 # Shared types and constants
-├── .env.example            # Environment variable template
-├── render.yaml             # Render deployment config
-├── vercel.json             # Vercel deployment config
-└── netlify.toml            # Netlify deployment config
-```
-
----
-
 ## Deployment
 
 ### Render (Recommended)
 
 1. Push to GitHub
-2. Go to [render.com](https://render.com) → New Web Service
+2. Go to [render.com](https://render.com) -> New Web Service
 3. Connect your repository
-4. Render auto-detects `render.yaml` – click **Deploy**
+4. Render auto-detects `render.yaml` -> click **Deploy**
 5. Add environment variables in the Render dashboard
 
 ### Vercel
@@ -117,9 +87,9 @@ family-recipe-planner/
 > **Note:** Vercel is optimized for serverless. The Express server runs as a single serverless function, which works but may have cold start latency.
 
 1. Push to GitHub
-2. Go to [vercel.com](https://vercel.com) → New Project
+2. Go to [vercel.com](https://vercel.com) -> New Project
 3. Import your repository
-4. Set environment variables in Project Settings → Environment Variables
+4. Set environment variables in Project Settings -> Environment Variables
 5. Deploy
 
 ### Netlify
@@ -127,9 +97,9 @@ family-recipe-planner/
 > **Note:** Netlify requires wrapping the Express app in a Netlify Function. See `netlify.toml` for configuration.
 
 1. Push to GitHub
-2. Go to [netlify.com](https://netlify.com) → Add new site
+2. Go to [netlify.com](https://netlify.com) -> Add new site
 3. Import from Git
-4. Set environment variables in Site Settings → Environment Variables
+4. Set environment variables in Site Settings -> Environment Variables
 5. Deploy
 
 ### Self-hosted (VPS / Docker)
@@ -138,43 +108,6 @@ family-recipe-planner/
 npm run build
 NODE_ENV=production DATABASE_URL=... JWT_SECRET=... npm start
 ```
-
----
-
-## Database
-
-The app uses **Drizzle ORM** with MySQL. To update the schema:
-
-1. Edit `drizzle/schema.ts`
-2. Run `npm run db:push` to generate and apply migrations
-3. Use `npm run db:studio` to browse data visually
-
----
-
-## Authentication
-
-The standalone version uses **email/password authentication** with JWT session cookies:
-
-- `POST /api/auth/register` – create account
-- `POST /api/auth/login` – sign in
-- `POST /api/auth/logout` – sign out
-
-Sessions are stored as signed JWT cookies (HttpOnly, Secure in production).
-
----
-
-## AI Integration
-
-The app uses any **OpenAI-compatible API** for recipe generation. Compatible providers:
-
-| Provider | `OPENAI_BASE_URL` |
-|---|---|
-| OpenAI | `https://api.openai.com/v1` (default) |
-| Azure OpenAI | `https://YOUR_RESOURCE.openai.azure.com/openai/deployments/YOUR_DEPLOYMENT` |
-| Ollama (local) | `http://localhost:11434/v1` |
-| Together AI | `https://api.together.xyz/v1` |
-| Groq | `https://api.groq.com/openai/v1` |
-| Anthropic (via proxy) | Use a compatible proxy |
 
 ---
 
