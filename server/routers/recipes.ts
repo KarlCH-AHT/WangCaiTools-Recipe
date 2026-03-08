@@ -56,6 +56,8 @@ async function uploadBase64Image(dataUrl: string, prefix = "recipe-images"): Pro
   const ext = mimeType.split("/")[1] || "jpg";
   const key = `${prefix}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
   const { url } = await storagePut(key, buffer, mimeType);
+  // If storage backend is not configured, keep the original data URL to avoid silent image loss.
+  if (!url) return dataUrl;
   return url;
 }
 

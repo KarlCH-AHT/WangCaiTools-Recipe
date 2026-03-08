@@ -41,6 +41,12 @@ async function startServer() {
       const ext = originalname.split(".").pop() || "jpg";
       const key = `recipe-images/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
       const { url } = await storagePut(key, buffer, mimetype);
+      if (!url) {
+        return res.status(500).json({
+          error:
+            "Image storage is not configured. Please set S3 env vars (S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_PUBLIC_BASE_URL).",
+        });
+      }
       return res.json({ url });
     } catch (err) {
       console.error("[Image Upload] Error:", err);
