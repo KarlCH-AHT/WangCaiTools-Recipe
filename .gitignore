@@ -114,3 +114,4 @@ temp/
 
 # Drizzle generated SQL migrations (keep schema.ts, not SQL)
 drizzle/migrations/*.sql
+KlWlsASUqCPhMuAy.sql
