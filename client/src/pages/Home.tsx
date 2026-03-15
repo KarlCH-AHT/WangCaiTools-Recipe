@@ -314,11 +314,18 @@ export default function Home() {
         <div className="container py-3">
           <div className="flex items-center justify-between gap-3">
             {/* Title */}
-            <div className="min-w-0 flex-shrink">
-              <h1 className="text-base font-bold text-foreground leading-tight truncate" style={{ letterSpacing: "-0.02em" }}>
-                {t("appTitle")}
-              </h1>
-              <p className="text-[11px] text-muted-foreground hidden sm:block">{t("yourRecipes")}</p>
+            <div className="min-w-0 flex items-center gap-2.5 flex-shrink">
+              <img
+                src="/icons/icon-192.png"
+                alt="WangCai"
+                className="h-8 w-8 rounded-xl border border-amber-200/80 shadow-sm flex-shrink-0"
+              />
+              <div className="min-w-0">
+                <h1 className="text-base font-bold text-foreground leading-tight truncate" style={{ letterSpacing: "-0.02em" }}>
+                  {t("appTitle")}
+                </h1>
+                <p className="text-[11px] text-muted-foreground hidden sm:block">{t("yourRecipes")}</p>
+              </div>
             </div>
 
             {/* Right actions */}
