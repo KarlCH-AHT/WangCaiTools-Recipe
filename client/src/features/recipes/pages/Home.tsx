@@ -18,7 +18,6 @@ import {
   Moon,
   Sun,
   CalendarDays,
-  Share2,
   ArrowRight,
   ChevronRight,
 } from "lucide-react";
@@ -45,14 +44,34 @@ type SortType = "date" | "name" | "rating";
 type HomeMode = "collect" | "plan";
 
 const LANG_LABELS: Record<string, string> = { zh: "中", en: "En", de: "De" };
-const DAY_LABELS: Record<string, string> = {
-  monday: "周一",
-  tuesday: "周二",
-  wednesday: "周三",
-  thursday: "周四",
-  friday: "周五",
-  saturday: "周六",
-  sunday: "周日",
+const DAY_LABELS_BY_LANGUAGE: Record<string, Record<string, string>> = {
+  zh: {
+    monday: "周一",
+    tuesday: "周二",
+    wednesday: "周三",
+    thursday: "周四",
+    friday: "周五",
+    saturday: "周六",
+    sunday: "周日",
+  },
+  en: {
+    monday: "Mon",
+    tuesday: "Tue",
+    wednesday: "Wed",
+    thursday: "Thu",
+    friday: "Fri",
+    saturday: "Sat",
+    sunday: "Sun",
+  },
+  de: {
+    monday: "Mo",
+    tuesday: "Di",
+    wednesday: "Mi",
+    thursday: "Do",
+    friday: "Fr",
+    saturday: "Sa",
+    sunday: "So",
+  },
 };
 
 function ImagePlaceholder({ title }: { title: string }) {
@@ -255,6 +274,7 @@ export default function Home() {
   const { language, setLanguage } = useLanguage();
   const { theme, toggleTheme } = useTheme();
   const t = useTranslation();
+  const dayLabels = DAY_LABELS_BY_LANGUAGE[language] || DAY_LABELS_BY_LANGUAGE.zh;
 
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showAIDialog, setShowAIDialog] = useState(false);
@@ -316,11 +336,6 @@ export default function Home() {
         })
         .filter(Boolean) as Array<{ recipeId: string; servings: number; recipe: any }>,
     [dailyMenu.items, getRecipe]
-  );
-
-  const totalTodayCookTime = useMemo(
-    () => todayRecipes.reduce((sum, item) => sum + (item.recipe.cookTime || 0), 0),
-    [todayRecipes]
   );
 
   const activeWeeklyMenu = useMemo(() => weeklyMenus[0] || null, [weeklyMenus]);
@@ -510,8 +525,28 @@ export default function Home() {
       </header>
 
       <main className="container space-y-4 py-4 lg:py-3">
-        <section className="flex justify-end">
-          <div className="rounded-full bg-muted p-1 shadow-inner">
+        <section className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          {homeMode === "collect" ? (
+            <div className="relative md:max-w-[560px] md:flex-1">
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="text"
+                className="search-input"
+                placeholder={t("searchRecipes") || "搜索菜名、食材、标签…"}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery("")} className="icon-btn absolute right-3 top-1/2 h-6 w-6 -translate-y-1/2">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          ) : (
+            <div />
+          )}
+
+          <div className="w-full rounded-full bg-amber-100/80 p-1 shadow-inner ring-1 ring-amber-200/80 md:w-auto">
             <div className="flex items-center gap-1">
               {([
                 ["collect", t("collectModeTab") || "菜单收集"],
@@ -520,8 +555,10 @@ export default function Home() {
                 <button
                   key={mode}
                   onClick={() => handleModeChange(mode)}
-                  className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
-                    homeMode === mode ? "bg-white text-foreground shadow-sm dark:bg-zinc-800" : "text-muted-foreground hover:text-foreground"
+                  className={`flex-1 rounded-full px-4 py-2.5 text-sm font-medium transition-all md:flex-none ${
+                    homeMode === mode
+                      ? "bg-amber-500 text-white shadow-sm dark:bg-amber-400 dark:text-zinc-950"
+                      : "text-amber-900/70 hover:text-amber-950 dark:text-amber-100/75 dark:hover:text-amber-50"
                   }`}
                 >
                   {label}
@@ -537,22 +574,6 @@ export default function Home() {
             style={{ width: "200%", transform: `translateX(${homeMode === "collect" ? "0%" : "-50%"})` }}
           >
             <section className="w-1/2 shrink-0 space-y-4 pr-0 md:pr-2">
-              <div className="relative lg:max-w-[720px]">
-                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  type="text"
-                  className="search-input"
-                  placeholder={t("searchRecipes") || "搜索菜名、食材、标签…"}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                {searchQuery && (
-                  <button onClick={() => setSearchQuery("")} className="icon-btn absolute right-3 top-1/2 h-6 w-6 -translate-y-1/2">
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                )}
-              </div>
-
               <div className="flex items-center gap-2">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -718,18 +739,14 @@ export default function Home() {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 self-start text-center">
+                  <div className="grid grid-cols-2 gap-2 self-start text-center">
                     <div className="rounded-2xl bg-white/80 px-3 py-3 shadow-sm ring-1 ring-black/5 dark:bg-zinc-800/90 dark:ring-white/10">
                       <p className="text-[11px] text-muted-foreground">{t("todayMenu") || "今日"}</p>
                       <p className="mt-1 text-xl font-semibold text-foreground">{todayRecipes.length}</p>
                     </div>
                     <div className="rounded-2xl bg-white/80 px-3 py-3 shadow-sm ring-1 ring-black/5 dark:bg-zinc-800/90 dark:ring-white/10">
                       <p className="text-[11px] text-muted-foreground">{t("weekPlan") || "本周"}</p>
-                      <p className="mt-1 text-xl font-semibold text-foreground">{weeklyDayCount}</p>
-                    </div>
-                    <div className="rounded-2xl bg-white/80 px-3 py-3 shadow-sm ring-1 ring-black/5 dark:bg-zinc-800/90 dark:ring-white/10">
-                      <p className="text-[11px] text-muted-foreground">{t("totalCookTime") || "分钟"}</p>
-                      <p className="mt-1 text-xl font-semibold text-foreground">{totalTodayCookTime}</p>
+                      <p className="mt-1 text-xl font-semibold text-foreground">{weeklyRecipeCount}</p>
                     </div>
                   </div>
                 </div>
@@ -747,13 +764,6 @@ export default function Home() {
                     className="inline-flex items-center gap-1.5 rounded-full px-1 py-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
                   >
                     {t("weeklyMenu") || "周计划"}
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => navigate("/today")}
-                    className="inline-flex items-center gap-1.5 rounded-full px-1 py-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    {t("todayMenu") || "今日菜单"}
                     <ChevronRight className="h-4 w-4" />
                   </button>
                 </div>
@@ -806,6 +816,15 @@ export default function Home() {
                         </div>
                       ))
                     )}
+                    {todayRecipes.length > 0 && (
+                      <button
+                        onClick={() => navigate("/today")}
+                        className="inline-flex items-center gap-1.5 rounded-full px-1 pt-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        {t("todayMenu") || "今日菜单"}
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -839,7 +858,7 @@ export default function Home() {
                             className="flex items-center justify-between rounded-[22px] border border-black/5 bg-[linear-gradient(180deg,_rgba(255,255,255,0.92),_rgba(248,250,252,0.9))] px-4 py-3.5 dark:border-white/10 dark:bg-zinc-800/60"
                           >
                             <div>
-                              <p className="text-sm font-medium text-foreground">{DAY_LABELS[day] || day}</p>
+                              <p className="text-sm font-medium text-foreground">{dayLabels[day] || day}</p>
                               <p className="mt-1 text-[11px] text-muted-foreground">{items.length} {t("recipes") || "菜谱"}</p>
                             </div>
                             <CalendarDays className="h-4 w-4 text-muted-foreground" />
@@ -861,16 +880,6 @@ export default function Home() {
                           <p className="mt-1 text-[11px] text-white/70 dark:text-zinc-700">{t("planFromLibraryHint") || "从现有菜谱里选，补充今天或本周。"} </p>
                         </div>
                         <ArrowRight className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => navigate("/today")}
-                        className="flex w-full items-center justify-between rounded-[20px] border border-border/70 px-4 py-3 text-left transition-colors hover:bg-muted/40"
-                      >
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{t("shareMenu") || "分享菜单"}</p>
-                          <p className="mt-1 text-[11px] text-muted-foreground">{t("shareMenuHint") || "进入执行页，继续购物清单和共享操作。"}</p>
-                        </div>
-                        <Share2 className="h-4 w-4 text-muted-foreground" />
                       </button>
                     </div>
                   </div>

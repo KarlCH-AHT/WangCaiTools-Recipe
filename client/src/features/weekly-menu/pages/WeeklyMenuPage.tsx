@@ -2,23 +2,44 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Trash2, CalendarDays, ShoppingBasket, ChevronRight, Check } from "lucide-react";
+import { Plus, Trash2, CalendarDays, ShoppingBasket, ChevronRight, Check, ArrowLeft } from "lucide-react";
 import { useWeeklyMenu } from "@/features/weekly-menu";
 import { useRecipes } from "@/features/recipes";
 import { useTranslation, useFormatUnit } from "@/hooks/useTranslation";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { nanoid } from "nanoid";
 import { WeeklyMenu } from "@/types/recipe";
 import { formatLocalDate } from "@/lib/date";
 
 const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
-const DAY_LABELS: Record<string, string> = {
-  monday: "Montag",
-  tuesday: "Dienstag",
-  wednesday: "Mittwoch",
-  thursday: "Donnerstag",
-  friday: "Freitag",
-  saturday: "Samstag",
-  sunday: "Sonntag",
+const DAY_LABELS_BY_LANGUAGE: Record<string, Record<string, string>> = {
+  zh: {
+    monday: "周一",
+    tuesday: "周二",
+    wednesday: "周三",
+    thursday: "周四",
+    friday: "周五",
+    saturday: "周六",
+    sunday: "周日",
+  },
+  en: {
+    monday: "Monday",
+    tuesday: "Tuesday",
+    wednesday: "Wednesday",
+    thursday: "Thursday",
+    friday: "Friday",
+    saturday: "Saturday",
+    sunday: "Sunday",
+  },
+  de: {
+    monday: "Montag",
+    tuesday: "Dienstag",
+    wednesday: "Mittwoch",
+    thursday: "Donnerstag",
+    friday: "Freitag",
+    saturday: "Samstag",
+    sunday: "Sonntag",
+  },
 };
 
 export default function WeeklyMenuPage() {
@@ -26,6 +47,8 @@ export default function WeeklyMenuPage() {
   const { weeklyMenus, addWeeklyMenu, updateWeeklyMenu, deleteWeeklyMenu, addMenuItemToDay, removeMenuItemFromDay, generateShoppingList } = useWeeklyMenu();
   const { recipes } = useRecipes();
   const t = useTranslation();
+  const { language } = useLanguage();
+  const dayLabels = DAY_LABELS_BY_LANGUAGE[language] || DAY_LABELS_BY_LANGUAGE.zh;
   const fu = useFormatUnit();
   const [selectedMenuId, setSelectedMenuId] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState<string>("monday");
@@ -105,26 +128,36 @@ export default function WeeklyMenuPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,_rgba(236,253,255,0.8),_rgba(255,255,255,1)_24%)]">
-      <header className="border-b border-border bg-card/90 sticky top-0 z-50 py-5 backdrop-blur-md">
-        <div className="container flex items-center justify-between gap-4">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-cyan-700/80">
-              {t("weeklyPlanningFocus") || "Weekly planning"}
-            </p>
-            <h1 className="mt-1 text-3xl font-bold text-foreground">
-              {t("weeklyMenu") || "Weekly Menu"}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {t("weeklyHierarchyDesc") || "先按周排布，再把某一天落到今日菜单执行。"}
-            </p>
+    <div className="min-h-screen bg-[linear-gradient(180deg,_rgba(248,250,252,0.92),_rgba(255,255,255,1)_24%)]">
+      <header className="sticky top-0 z-50 border-b border-border/60 bg-background/85 py-4 backdrop-blur-md">
+        <div className="container flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-3">
+            <button
+              onClick={() => navigate("/")}
+              className="mt-1 flex h-10 w-10 items-center justify-center rounded-full border border-border/70 bg-background text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+              aria-label={t("back") || "Back"}
+              title={t("back") || "Back"}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                {t("weeklyPlanningFocus") || "Weekly planning"}
+              </p>
+              <h1 className="mt-1 text-3xl font-semibold tracking-[-0.03em] text-foreground">
+                {t("weeklyMenu") || "Weekly Menu"}
+              </h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {t("weeklyHierarchyDesc") || "先按周排布，再把某一天落到今日菜单执行。"}
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => navigate("/")}>
-              {t("familyKitchen") || "家庭平台"}
-            </Button>
+          <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" onClick={() => navigate("/menu")}>
               {t("menuOverview") || "点菜台"}
+            </Button>
+            <Button variant="outline" onClick={() => navigate("/today")}>
+              {t("todayMenu") || "今日菜单"}
             </Button>
             <Button onClick={createNewWeeklyMenu} className="gap-2">
               <Plus className="w-4 h-4" />
@@ -222,7 +255,7 @@ export default function WeeklyMenuPage() {
                           onClick={() => setSelectedDay(day)}
                           className={`rounded-2xl border px-3 py-3 text-left transition-colors ${active ? "border-cyan-500 bg-cyan-50" : "border-border bg-background hover:bg-muted/40"}`}
                         >
-                          <p className="text-xs text-muted-foreground">{DAY_LABELS[day]}</p>
+                          <p className="text-xs text-muted-foreground">{dayLabels[day]}</p>
                           <p className="mt-1 text-sm font-semibold text-foreground">{count} {t("recipes") || "recipes"}</p>
                         </button>
                       );
@@ -233,7 +266,7 @@ export default function WeeklyMenuPage() {
                 <div className="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
                   <Card>
                     <CardHeader>
-                      <CardTitle>{DAY_LABELS[selectedDay]}</CardTitle>
+                      <CardTitle>{dayLabels[selectedDay]}</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div className="flex gap-2">
