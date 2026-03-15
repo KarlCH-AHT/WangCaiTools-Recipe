@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback } from "react";
 import { useLocation } from "wouter";
 import {
   ArrowLeft, Clock, Users, Plus, Grid3x3, List, Grid2x2,
-  Heart, Check, UtensilsCrossed, ChevronDown, X, Eye, Share2,
+  Heart, Check, UtensilsCrossed, ChevronDown, X, Eye, Share2, CalendarDays,
 } from "lucide-react";
 import { useRecipes } from "@/features/recipes";
 import { PortionSelectionDialog, RandomRecommendation, RecipePreviewDialog, useDailyMenu } from "@/features/daily-menu";
@@ -183,10 +183,18 @@ export default function MenuOverview() {
                 <h1 className="text-base font-bold text-foreground leading-tight" style={{ letterSpacing: "-0.02em" }}>
                   {t("menuOverview")}
                 </h1>
-                <p className="text-xs text-muted-foreground">{t("selectRecipes")}</p>
+                <p className="text-xs text-muted-foreground">{t("menuOverviewDesc") || "从菜谱库挑选候选菜，再进入今日菜单或周计划。"}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigate("/weekly")}
+                className="flex items-center justify-center w-8 h-8 rounded-xl border border-border bg-card text-muted-foreground hover:bg-muted/60 transition-colors"
+                aria-label={t("weeklyMenu") || "Weekly menu"}
+                title={t("weeklyMenu") || "Weekly menu"}
+              >
+                <CalendarDays className="w-3.5 h-3.5" />
+              </button>
               <button
                 onClick={handleShareMenu}
                 className="flex items-center justify-center w-8 h-8 rounded-xl border border-border bg-card text-muted-foreground hover:bg-muted/60 transition-colors"

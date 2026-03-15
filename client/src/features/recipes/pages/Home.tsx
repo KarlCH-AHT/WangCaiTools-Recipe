@@ -1,7 +1,9 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useLocation } from "wouter";
-import { Plus, Clock, Users, Search, X, Heart, Grid3x3, List, Grid2x2, Sparkles, UtensilsCrossed, Upload, ChevronDown, Check, Moon, Sun, CalendarDays, ShoppingBasket, Share2, ArrowRight } from "lucide-react";
+import { Plus, Clock, Users, Search, X, Heart, Grid3x3, List, Grid2x2, Sparkles, UtensilsCrossed, Upload, ChevronDown, Check, Moon, Sun, CalendarDays, Share2, ArrowRight, FolderPlus, NotebookTabs, WandSparkles } from "lucide-react";
 import { useRecipes } from "@/features/recipes";
+import { useDailyMenu } from "@/features/daily-menu";
+import { useWeeklyMenu } from "@/features/weekly-menu";
 import { useTranslation } from "@/hooks/useTranslation";
 import { AddRecipeDialog, AIGenerateRecipeDialog, ImportRecipeDialog } from "@/features/recipes";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -247,11 +249,38 @@ function FamilyHubCard({
   );
 }
 
+function QuickActionCard({
+  title,
+  description,
+  icon,
+  onClick,
+}: {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="rounded-3xl border border-border/70 bg-white/90 p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-md dark:bg-zinc-900/80"
+    >
+      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+        {icon}
+      </div>
+      <h3 className="mt-4 text-sm font-semibold text-foreground">{title}</h3>
+      <p className="mt-1 text-xs leading-5 text-muted-foreground">{description}</p>
+    </button>
+  );
+}
+
 // ── Main component ─────────────────────────────────────────────────────────
 export default function Home() {
   const [, navigate] = useLocation();
   const { user, loading: authLoading, logout } = useAuth();
-  const { recipes, searchRecipes, toggleFavorite, loading: recipesLoading } = useRecipes();
+  const { recipes, searchRecipes, toggleFavorite, loading: recipesLoading, getRecipe } = useRecipes();
+  const { dailyMenu } = useDailyMenu();
+  const { weeklyMenus } = useWeeklyMenu();
   const { language, setLanguage } = useLanguage();
   const { theme, toggleTheme } = useTheme();
 
@@ -302,6 +331,33 @@ export default function Home() {
     };
   }, [recipes.length, categories.length, allTags.length, favoriteCount, ratedCount]);
 
+  const todayRecipes = useMemo(
+    () =>
+      dailyMenu.items
+        .map((item) => {
+          const recipe = getRecipe(item.recipeId);
+          return recipe ? { ...item, recipe } : null;
+        })
+        .filter(Boolean) as Array<{ recipeId: string; servings: number; recipe: any }>,
+    [dailyMenu.items, getRecipe]
+  );
+
+  const totalTodayCookTime = useMemo(
+    () => todayRecipes.reduce((sum, item) => sum + (item.recipe.cookTime || 0), 0),
+    [todayRecipes]
+  );
+
+  const activeWeeklyMenu = useMemo(() => weeklyMenus[0] || null, [weeklyMenus]);
+  const weeklyDayCount = useMemo(() => {
+    if (!activeWeeklyMenu) return 0;
+    return Object.values(activeWeeklyMenu.items).filter((items) => items.length > 0).length;
+  }, [activeWeeklyMenu]);
+
+  const weeklyRecipeCount = useMemo(() => {
+    if (!activeWeeklyMenu) return 0;
+    return Object.values(activeWeeklyMenu.items).flat().length;
+  }, [activeWeeklyMenu]);
+
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
@@ -318,6 +374,8 @@ export default function Home() {
     else result = result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     return result;
   }, [recipes, searchQuery, selectedCategory, showFavoritesOnly, selectedTags, sortType, searchRecipes]);
+
+  const recentRecipes = useMemo(() => displayRecipes.slice(0, 4), [displayRecipes]);
 
   // Active filter label for category dropdown
   const categoryLabel = showFavoritesOnly
@@ -483,64 +541,248 @@ export default function Home() {
 
       {/* ── Main ── */}
       <main className="container py-4 lg:py-3 space-y-3">
-        <section className="overflow-hidden rounded-[28px] border border-amber-200/70 bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.22),_transparent_32%),linear-gradient(135deg,_rgba(255,251,235,0.98),_rgba(255,255,255,0.94))] p-4 shadow-sm">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-2xl">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-700/80">
-                {t("familyKitchen") || "家庭厨房"}
-              </p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
-                {t("familyHubTitle") || "把今天要做什么、这周怎么吃、谁去买菜放到同一个工作台"}
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                {t("familyHubDesc") || "首页先服务家庭日常决策，再进入具体菜谱编辑。这样更像家里真的会每天打开的工具。"}
-              </p>
+        <section className="grid gap-3 xl:grid-cols-[minmax(0,1.3fr)_380px]">
+          <div className="overflow-hidden rounded-[28px] border border-amber-200/70 bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.22),_transparent_32%),linear-gradient(135deg,_rgba(255,251,235,0.98),_rgba(255,255,255,0.94))] p-4 shadow-sm">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-2xl">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-700/80">
+                  {t("familyKitchen") || "家庭厨房"}
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
+                  {t("familyHubTitle") || "把今天要做什么、这周怎么吃、谁去买菜放到同一个工作台"}
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  {t("familyHubDesc") || "首页先服务家庭日常决策，再进入具体菜谱编辑。这样更像家里真的会每天打开的工具。"}
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+                <div className="rounded-2xl bg-white/80 px-3 py-2 shadow-sm">
+                  <p className="text-muted-foreground">{t("recipes") || "菜谱"}</p>
+                  <p className="mt-1 text-lg font-semibold text-foreground">{quickHubStats.recipes}</p>
+                </div>
+                <div className="rounded-2xl bg-white/80 px-3 py-2 shadow-sm">
+                  <p className="text-muted-foreground">{t("favorites") || "收藏"}</p>
+                  <p className="mt-1 text-lg font-semibold text-foreground">{quickHubStats.favorites}</p>
+                </div>
+                <div className="rounded-2xl bg-white/80 px-3 py-2 shadow-sm">
+                  <p className="text-muted-foreground">{t("categories") || "分类"}</p>
+                  <p className="mt-1 text-lg font-semibold text-foreground">{quickHubStats.categories}</p>
+                </div>
+                <div className="rounded-2xl bg-white/80 px-3 py-2 shadow-sm">
+                  <p className="text-muted-foreground">{t("highRated") || "高分"}</p>
+                  <p className="mt-1 text-lg font-semibold text-foreground">{quickHubStats.rated}</p>
+                </div>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
-              <div className="rounded-2xl bg-white/80 px-3 py-2 shadow-sm">
-                <p className="text-muted-foreground">{t("recipes") || "菜谱"}</p>
-                <p className="mt-1 text-lg font-semibold text-foreground">{quickHubStats.recipes}</p>
+
+            <div className="mt-4 grid gap-3 lg:grid-cols-3">
+              <FamilyHubCard
+                title={t("todayMenuFocus") || "先安排今天吃什么"}
+                description={t("todayMenuFocusDesc") || "把候选菜谱拉进今天菜单，马上生成购物清单和烹饪流程。"}
+                meta={`${todayRecipes.length} ${t("recipes") || "菜谱"} · ${totalTodayCookTime} ${t("min") || "分钟"}`}
+                icon={<UtensilsCrossed className="h-5 w-5 text-amber-700" />}
+                tone="amber"
+                onClick={() => navigate("/menu")}
+              />
+              <FamilyHubCard
+                title={t("weeklyPlanningFocus") || "把一周菜单变成主工作台"}
+                description={t("weeklyPlanningFocusDesc") || "从每日救火，升级成按周规划，减少重复买菜和临时决定。"}
+                meta={`${weeklyDayCount} ${t("weekPlan") || "已安排天数"} · ${weeklyRecipeCount} ${t("recipes") || "菜谱"}`}
+                icon={<CalendarDays className="h-5 w-5 text-cyan-700" />}
+                tone="cyan"
+                onClick={() => navigate("/weekly")}
+              />
+              <FamilyHubCard
+                title={t("familyCollaborationFocus") || "让家人一起参与"}
+                description={t("familyCollaborationFocusDesc") || "通过共享菜单页分配采购、做饭和确认状态，先从轻协作开始。"}
+                meta={`${t("shareMenu") || "分享菜单"} · ${t("shoppingList") || "购物清单"} · ${t("todayMenu") || "今日菜单"}`}
+                icon={<Share2 className="h-5 w-5 text-emerald-700" />}
+                tone="emerald"
+                onClick={() => navigate("/today")}
+              />
+            </div>
+          </div>
+
+          <aside className="rounded-[28px] border border-border/70 bg-[linear-gradient(160deg,_rgba(255,255,255,0.98),_rgba(255,247,237,0.92))] p-4 shadow-sm dark:bg-[linear-gradient(160deg,_rgba(39,39,42,0.98),_rgba(24,24,27,0.92))]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-orange-700/80">
+              {t("recipes") || "菜谱库"}
+            </p>
+            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
+              {t("recipeCommandCenter") || "菜谱收录与管理"}
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              {t("recipeCommandCenterDesc") || "把新增、导入、AI 生成和最近整理过的菜谱集中在这里，首页也能完成收录工作。"}
+            </p>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+              <QuickActionCard
+                title={t("newRecipe") || "新建菜谱"}
+                description={t("newRecipeDesc") || "手动录入家里的常做菜、家传菜和临时灵感。"}
+                icon={<FolderPlus className="h-5 w-5" />}
+                onClick={() => setShowAddDialog(true)}
+              />
+              <QuickActionCard
+                title={t("importRecipe") || "导入菜谱"}
+                description={t("importRecipeDesc") || "从外部来源快速收录，减少重复录入的成本。"}
+                icon={<NotebookTabs className="h-5 w-5" />}
+                onClick={() => setShowImportDialog(true)}
+              />
+              <QuickActionCard
+                title={t("generateWithAI") || "AI 生成"}
+                description={t("generateWithAIDesc") || "根据想法、食材或场景先起草一版，再进入编辑整理。"}
+                icon={<WandSparkles className="h-5 w-5" />}
+                onClick={() => setShowAIDialog(true)}
+              />
+            </div>
+
+            <div className="mt-4 rounded-3xl border border-border/70 bg-white/70 p-4 dark:bg-zinc-900/60">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{t("recentlyUpdated") || "最近常看"}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{t("recentlyUpdatedDesc") || "直接回到最近处理过或刚筛出的菜谱。"}</p>
+                </div>
+                <button
+                  onClick={() => navigate("/menu")}
+                  className="rounded-full border border-border/80 px-3 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+                >
+                  {t("menuOverview") || "菜单入口"}
+                </button>
               </div>
-              <div className="rounded-2xl bg-white/80 px-3 py-2 shadow-sm">
-                <p className="text-muted-foreground">{t("favorites") || "收藏"}</p>
-                <p className="mt-1 text-lg font-semibold text-foreground">{quickHubStats.favorites}</p>
+              <div className="mt-4 space-y-2">
+                {recentRecipes.length === 0 ? (
+                  <p className="rounded-2xl border border-dashed border-border/70 px-3 py-4 text-xs text-muted-foreground">
+                    {t("noRecipesDescShort") || "还没有菜谱，先添加第一道菜吧。"}
+                  </p>
+                ) : (
+                  recentRecipes.map((recipe) => (
+                    <button
+                      key={recipe.id}
+                      onClick={() => navigate(`/recipe/${recipe.id}`)}
+                      className="flex w-full items-center justify-between rounded-2xl border border-border/70 bg-background/80 px-3 py-3 text-left transition-colors hover:border-amber-300 hover:bg-amber-50/50 dark:bg-zinc-950/40"
+                    >
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{recipe.title}</p>
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                          {recipe.category || (t("category") || "分类")}
+                          {recipe.cookTime ? ` · ${recipe.cookTime}${t("min") || "min"}` : ""}
+                        </p>
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                  ))
+                )}
               </div>
-              <div className="rounded-2xl bg-white/80 px-3 py-2 shadow-sm">
-                <p className="text-muted-foreground">{t("categories") || "分类"}</p>
-                <p className="mt-1 text-lg font-semibold text-foreground">{quickHubStats.categories}</p>
+            </div>
+          </aside>
+        </section>
+
+        <section className="grid gap-3 lg:grid-cols-[minmax(0,1.15fr)_360px]">
+          <div className="rounded-[28px] border border-cyan-200/70 bg-white/90 p-4 shadow-sm dark:border-cyan-900/60 dark:bg-zinc-900/80">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-cyan-700/80">
+                  {t("todayMenu") || "今日菜单"}
+                </p>
+                <h3 className="mt-2 text-xl font-semibold text-foreground">
+                  {t("homePlannerTitle") || "先点菜，再进入执行"}
+                </h3>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  {t("homePlannerDesc") || "首页先完成选菜和判断，本周计划负责规划，今日菜单负责执行。"}
+                </p>
               </div>
-              <div className="rounded-2xl bg-white/80 px-3 py-2 shadow-sm">
-                <p className="text-muted-foreground">{t("highRated") || "高分"}</p>
-                <p className="mt-1 text-lg font-semibold text-foreground">{quickHubStats.rated}</p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => navigate("/menu")}
+                  className="rounded-full bg-cyan-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-cyan-500"
+                >
+                  {t("menuOverview") || "去点菜"}
+                </button>
+                <button
+                  onClick={() => navigate("/weekly")}
+                  className="rounded-full border border-border/80 px-4 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+                >
+                  {t("weeklyMenu") || "周计划"}
+                </button>
+                <button
+                  onClick={() => navigate("/today")}
+                  className="rounded-full border border-border/80 px-4 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+                >
+                  {t("startCooking") || "开始烹饪"}
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              <div className="rounded-3xl bg-cyan-50/80 p-4">
+                <p className="text-xs text-cyan-700/80">{t("todayMenu") || "今日菜单"}</p>
+                <p className="mt-2 text-2xl font-semibold text-foreground">{todayRecipes.length}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{t("selectedCount") || "已选"} {t("recipes") || "菜谱"}</p>
+              </div>
+              <div className="rounded-3xl bg-cyan-50/80 p-4">
+                <p className="text-xs text-cyan-700/80">{t("weeklyMenu") || "周计划"}</p>
+                <p className="mt-2 text-2xl font-semibold text-foreground">{weeklyDayCount}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{t("weekPlan") || "已安排天数"}</p>
+              </div>
+              <div className="rounded-3xl bg-cyan-50/80 p-4">
+                <p className="text-xs text-cyan-700/80">{t("shoppingList") || "购物清单"}</p>
+                <p className="mt-2 text-2xl font-semibold text-foreground">{totalTodayCookTime}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{t("totalCookTime") || "预计分钟"}</p>
               </div>
             </div>
           </div>
 
-          <div className="mt-4 grid gap-3 lg:grid-cols-3">
-            <FamilyHubCard
-              title={t("todayMenuFocus") || "先安排今天吃什么"}
-              description={t("todayMenuFocusDesc") || "把候选菜谱拉进今天菜单，马上生成购物清单和烹饪流程。"}
-              meta={`${t("selectedCount") || "已选"} ${favoriteCount} ${t("favorites") || "收藏"} · ${t("shoppingList") || "购物清单"}`}
-              icon={<UtensilsCrossed className="h-5 w-5 text-amber-700" />}
-              tone="amber"
-              onClick={() => navigate("/menu")}
-            />
-            <FamilyHubCard
-              title={t("weeklyPlanningFocus") || "把一周菜单变成主工作台"}
-              description={t("weeklyPlanningFocusDesc") || "从每日救火，升级成按周规划，减少重复买菜和临时决定。"}
-              meta={`${quickHubStats.categories} ${t("categories") || "分类"} · ${quickHubStats.tags} ${t("tags") || "标签"}`}
-              icon={<CalendarDays className="h-5 w-5 text-cyan-700" />}
-              tone="cyan"
-              onClick={() => navigate("/weekly")}
-            />
-            <FamilyHubCard
-              title={t("familyCollaborationFocus") || "让家人一起参与"}
-              description={t("familyCollaborationFocusDesc") || "通过共享菜单页分配采购、做饭和确认状态，先从轻协作开始。"}
-              meta={`${t("shareMenu") || "分享菜单"} · ${t("shoppingList") || "购物清单"} · ${t("todayMenu") || "今日菜单"}`}
-              icon={<Share2 className="h-5 w-5 text-emerald-700" />}
-              tone="emerald"
-              onClick={() => navigate("/today")}
-            />
+          <div className="rounded-[28px] border border-border/70 bg-card/95 p-4 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-foreground/60">
+                  {t("recipes") || "菜谱库"}
+                </p>
+                <h3 className="mt-2 text-xl font-semibold text-foreground">
+                  {t("recipeLibraryTitle") || "菜谱资产区"}
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowFavoritesOnly((prev) => !prev)}
+                className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                  showFavoritesOnly ? "bg-rose-100 text-rose-700" : "bg-muted text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {t("favorites") || "收藏"}
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              <button
+                onClick={() => setShowAddDialog(true)}
+                className="flex w-full items-center justify-between rounded-2xl border border-border/70 bg-background px-4 py-3 text-left transition-colors hover:border-amber-300 hover:bg-amber-50/50"
+              >
+                <div>
+                  <p className="text-sm font-medium text-foreground">{t("newRecipe") || "新建菜谱"}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{t("newRecipeDesc") || "把新菜谱正式收录进家庭菜谱库"}</p>
+                </div>
+                <Plus className="h-4 w-4 text-muted-foreground" />
+              </button>
+              <button
+                onClick={() => navigate("/menu")}
+                className="flex w-full items-center justify-between rounded-2xl border border-border/70 bg-background px-4 py-3 text-left transition-colors hover:border-cyan-300 hover:bg-cyan-50/50"
+              >
+                <div>
+                  <p className="text-sm font-medium text-foreground">{t("menuOverview") || "菜单总览"}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{t("menuOverviewDesc") || "从菜谱库里挑菜，把候选菜加入今天菜单或本周计划"}</p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground" />
+              </button>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-2xl bg-muted/50 p-3">
+                  <p className="text-xs text-muted-foreground">{t("tags") || "标签"}</p>
+                  <p className="mt-1 text-lg font-semibold text-foreground">{quickHubStats.tags}</p>
+                </div>
+                <div className="rounded-2xl bg-muted/50 p-3">
+                  <p className="text-xs text-muted-foreground">{t("favorites") || "收藏"}</p>
+                  <p className="mt-1 text-lg font-semibold text-foreground">{quickHubStats.favorites}</p>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 

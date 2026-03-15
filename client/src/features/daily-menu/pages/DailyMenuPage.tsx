@@ -109,19 +109,27 @@ export default function DailyMenuPage() {
                   {t("todayMenu")}
                 </h1>
                 <p className="text-xs text-muted-foreground">
-                  {menuItems.length} {t("recipes")} · {combinedIngredients.length} {t("ingredients")}
+                  {t("dailyExecutionDesc") || "执行层：确认份量、购物清单和真正要做的菜。"}
                 </p>
               </div>
             </div>
-            {menuItems.length > 0 && (
+            <div className="flex items-center gap-2">
               <button
-                onClick={clearMenu}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-destructive bg-destructive/10 hover:bg-destructive/15 rounded-lg transition-colors"
+                onClick={() => navigate("/weekly")}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-muted-foreground bg-muted hover:bg-muted/80 rounded-lg transition-colors"
               >
-                <Trash2 className="w-3.5 h-3.5" />
-                {t("clearMenu")}
+                {t("weeklyMenu") || "周计划"}
               </button>
-            )}
+              {menuItems.length > 0 && (
+                <button
+                  onClick={clearMenu}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-destructive bg-destructive/10 hover:bg-destructive/15 rounded-lg transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  {t("clearMenu")}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </header>

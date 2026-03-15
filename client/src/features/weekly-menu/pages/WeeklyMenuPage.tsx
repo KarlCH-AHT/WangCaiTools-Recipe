@@ -116,12 +116,15 @@ export default function WeeklyMenuPage() {
               {t("weeklyMenu") || "Weekly Menu"}
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {t("planYourWeek") || "Plan your meals for the week"}
+              {t("weeklyHierarchyDesc") || "先按周排布，再把某一天落到今日菜单执行。"}
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => navigate("/")}>
+              {t("familyKitchen") || "家庭平台"}
+            </Button>
             <Button variant="outline" onClick={() => navigate("/menu")}>
-              {t("menuOverview") || "Menu Overview"}
+              {t("menuOverview") || "点菜台"}
             </Button>
             <Button onClick={createNewWeeklyMenu} className="gap-2">
               <Plus className="w-4 h-4" />
@@ -193,6 +196,9 @@ export default function WeeklyMenuPage() {
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
+                      <Button variant="outline" onClick={() => navigate("/today")}>
+                        {t("todayMenu") || "今日菜单"}
+                      </Button>
                       <Button variant="outline" onClick={handleDuplicateWeek}>
                         {t("tryAgain") || "Duplicate"}
                       </Button>
