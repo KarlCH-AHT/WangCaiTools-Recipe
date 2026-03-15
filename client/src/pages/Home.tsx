@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
-import { Plus, Clock, Users, Search, X, Heart, Grid3x3, List, Grid2x2, Sparkles, UtensilsCrossed, Upload, ChevronDown, Check, Moon, Sun } from "lucide-react";
+import { Plus, Clock, Users, Search, X, Heart, Grid3x3, List, Grid2x2, Sparkles, UtensilsCrossed, Upload, ChevronDown, Check, Moon, Sun, CalendarDays, ShoppingBasket, Share2, ArrowRight } from "lucide-react";
 import { useRecipes } from "@/contexts/RecipeContext";
 import { useTranslation } from "@/hooks/useTranslation";
 import AddRecipeDialog from "@/components/AddRecipeDialog";
@@ -208,6 +208,47 @@ function EmptyState({ onAdd, t }: { onAdd: () => void; t: (k: string) => string 
   );
 }
 
+function FamilyHubCard({
+  title,
+  description,
+  meta,
+  icon,
+  tone,
+  onClick,
+}: {
+  title: string;
+  description: string;
+  meta: string;
+  icon: React.ReactNode;
+  tone: "amber" | "cyan" | "emerald";
+  onClick: () => void;
+}) {
+  const toneClasses = {
+    amber: "border-amber-200/80 bg-gradient-to-br from-amber-50 via-orange-50 to-white text-amber-900",
+    cyan: "border-cyan-200/80 bg-gradient-to-br from-cyan-50 via-sky-50 to-white text-cyan-900",
+    emerald: "border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-lime-50 to-white text-emerald-900",
+  } as const;
+
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full rounded-3xl border p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${toneClasses[tone]}`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/80 shadow-sm">
+          {icon}
+        </div>
+        <ArrowRight className="mt-1 h-4 w-4 opacity-60" />
+      </div>
+      <div className="mt-5">
+        <h3 className="text-sm font-semibold">{title}</h3>
+        <p className="mt-1 text-xs leading-5 opacity-80">{description}</p>
+        <p className="mt-3 text-[11px] font-medium opacity-75">{meta}</p>
+      </div>
+    </button>
+  );
+}
+
 // ── Main component ─────────────────────────────────────────────────────────
 export default function Home() {
   const [, navigate] = useLocation();
@@ -250,6 +291,18 @@ export default function Home() {
     recipes.forEach((r) => (r.tags || []).forEach((tag) => tagSet.add(tag)));
     return Array.from(tagSet).sort();
   }, [recipes]);
+
+  const favoriteCount = useMemo(() => recipes.filter((recipe) => recipe.isFavorite).length, [recipes]);
+  const ratedCount = useMemo(() => recipes.filter((recipe) => (recipe.rating ?? 0) >= 4).length, [recipes]);
+  const quickHubStats = useMemo(() => {
+    return {
+      recipes: recipes.length,
+      categories: categories.length,
+      tags: allTags.length,
+      favorites: favoriteCount,
+      rated: ratedCount,
+    };
+  }, [recipes.length, categories.length, allTags.length, favoriteCount, ratedCount]);
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
@@ -432,6 +485,66 @@ export default function Home() {
 
       {/* ── Main ── */}
       <main className="container py-4 lg:py-3 space-y-3">
+        <section className="overflow-hidden rounded-[28px] border border-amber-200/70 bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.22),_transparent_32%),linear-gradient(135deg,_rgba(255,251,235,0.98),_rgba(255,255,255,0.94))] p-4 shadow-sm">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-700/80">
+                {t("familyKitchen") || "家庭厨房"}
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
+                {t("familyHubTitle") || "把今天要做什么、这周怎么吃、谁去买菜放到同一个工作台"}
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                {t("familyHubDesc") || "首页先服务家庭日常决策，再进入具体菜谱编辑。这样更像家里真的会每天打开的工具。"}
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+              <div className="rounded-2xl bg-white/80 px-3 py-2 shadow-sm">
+                <p className="text-muted-foreground">{t("recipes") || "菜谱"}</p>
+                <p className="mt-1 text-lg font-semibold text-foreground">{quickHubStats.recipes}</p>
+              </div>
+              <div className="rounded-2xl bg-white/80 px-3 py-2 shadow-sm">
+                <p className="text-muted-foreground">{t("favorites") || "收藏"}</p>
+                <p className="mt-1 text-lg font-semibold text-foreground">{quickHubStats.favorites}</p>
+              </div>
+              <div className="rounded-2xl bg-white/80 px-3 py-2 shadow-sm">
+                <p className="text-muted-foreground">{t("categories") || "分类"}</p>
+                <p className="mt-1 text-lg font-semibold text-foreground">{quickHubStats.categories}</p>
+              </div>
+              <div className="rounded-2xl bg-white/80 px-3 py-2 shadow-sm">
+                <p className="text-muted-foreground">{t("highRated") || "高分"}</p>
+                <p className="mt-1 text-lg font-semibold text-foreground">{quickHubStats.rated}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-3 lg:grid-cols-3">
+            <FamilyHubCard
+              title={t("todayMenuFocus") || "先安排今天吃什么"}
+              description={t("todayMenuFocusDesc") || "把候选菜谱拉进今天菜单，马上生成购物清单和烹饪流程。"}
+              meta={`${t("selectedCount") || "已选"} ${favoriteCount} ${t("favorites") || "收藏"} · ${t("shoppingList") || "购物清单"}`}
+              icon={<UtensilsCrossed className="h-5 w-5 text-amber-700" />}
+              tone="amber"
+              onClick={() => navigate("/menu")}
+            />
+            <FamilyHubCard
+              title={t("weeklyPlanningFocus") || "把一周菜单变成主工作台"}
+              description={t("weeklyPlanningFocusDesc") || "从每日救火，升级成按周规划，减少重复买菜和临时决定。"}
+              meta={`${quickHubStats.categories} ${t("categories") || "分类"} · ${quickHubStats.tags} ${t("tags") || "标签"}`}
+              icon={<CalendarDays className="h-5 w-5 text-cyan-700" />}
+              tone="cyan"
+              onClick={() => navigate("/weekly")}
+            />
+            <FamilyHubCard
+              title={t("familyCollaborationFocus") || "让家人一起参与"}
+              description={t("familyCollaborationFocusDesc") || "通过共享菜单页分配采购、做饭和确认状态，先从轻协作开始。"}
+              meta={`${t("shareMenu") || "分享菜单"} · ${t("shoppingList") || "购物清单"} · ${t("todayMenu") || "今日菜单"}`}
+              icon={<Share2 className="h-5 w-5 text-emerald-700" />}
+              tone="emerald"
+              onClick={() => navigate("/today")}
+            />
+          </div>
+        </section>
 
         {/* Search – centered on desktop */}
         <div className="relative lg:max-w-[720px] lg:mx-auto">

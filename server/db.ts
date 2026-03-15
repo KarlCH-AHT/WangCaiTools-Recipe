@@ -1,6 +1,6 @@
 import { eq, and, inArray, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, recipes, ingredients, steps, tags, dailyMenuItems, recipeImages, menuShares, InsertRecipe, Recipe, InsertIngredient, Ingredient, InsertStep, Step, InsertTag, Tag, InsertDailyMenuItem, DailyMenuItem, RecipeImage, InsertRecipeImage, InsertMenuShare, MenuShare } from "../drizzle/schema";
+import { InsertUser, users, recipes, ingredients, steps, tags, dailyMenuItems, recipeImages, menuShares, weeklyMenus, InsertRecipe, Recipe, InsertIngredient, Ingredient, InsertStep, Step, InsertTag, Tag, InsertDailyMenuItem, DailyMenuItem, RecipeImage, InsertRecipeImage, InsertMenuShare, MenuShare, InsertWeeklyMenu, WeeklyMenu } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -131,6 +131,30 @@ export async function getRecipesByUserId(_userId: number): Promise<Recipe[]> {
   
   // Family sharing mode: return all recipes regardless of userId
   return db.select().from(recipes);
+}
+
+export async function getIngredientsByRecipeIds(recipeIds: string[]): Promise<Ingredient[]> {
+  const db = await getDb();
+  if (!db || recipeIds.length === 0) return [];
+  return db.select().from(ingredients).where(inArray(ingredients.recipeId, recipeIds));
+}
+
+export async function getStepsByRecipeIds(recipeIds: string[]): Promise<Step[]> {
+  const db = await getDb();
+  if (!db || recipeIds.length === 0) return [];
+  return db.select().from(steps).where(inArray(steps.recipeId, recipeIds));
+}
+
+export async function getTagsByRecipeIds(recipeIds: string[]): Promise<Tag[]> {
+  const db = await getDb();
+  if (!db || recipeIds.length === 0) return [];
+  return db.select().from(tags).where(inArray(tags.recipeId, recipeIds));
+}
+
+export async function getImagesByRecipeIds(recipeIds: string[]): Promise<RecipeImage[]> {
+  const db = await getDb();
+  if (!db || recipeIds.length === 0) return [];
+  return db.select().from(recipeImages).where(inArray(recipeImages.recipeId, recipeIds)).orderBy(recipeImages.sortOrder);
 }
 
 export async function getRecipeById(recipeId: string, _userId: number): Promise<Recipe | undefined> {
@@ -308,6 +332,29 @@ export async function clearDailyMenu(userId: number): Promise<void> {
   await db.delete(dailyMenuItems).where(eq(dailyMenuItems.userId, userId));
 }
 
+export async function updateDailyMenuItemServings(dailyMenuItemId: string, userId: number, servings: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(dailyMenuItems)
+    .set({ servings })
+    .where(and(eq(dailyMenuItems.id, dailyMenuItemId), eq(dailyMenuItems.userId, userId)));
+}
+
+export async function getDailyMenuItemByRecipeId(userId: number, recipeId: string): Promise<DailyMenuItem | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db
+    .select()
+    .from(dailyMenuItems)
+    .where(and(eq(dailyMenuItems.userId, userId), eq(dailyMenuItems.recipeId, recipeId)))
+    .limit(1);
+
+  return result[0];
+}
+
 // Menu share queries
 export async function createMenuShare(userId: number, data: Omit<InsertMenuShare, "userId">): Promise<MenuShare> {
   const db = await getDb();
@@ -322,4 +369,45 @@ export async function getMenuShareById(shareId: string): Promise<MenuShare | und
   if (!db) return undefined;
   const result = await db.select().from(menuShares).where(eq(menuShares.id, shareId)).limit(1);
   return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updateMenuShareMetadata(shareId: string, metadataJson: string): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(menuShares).set({ metadataJson }).where(eq(menuShares.id, shareId));
+}
+
+// Weekly menu queries
+export async function createWeeklyMenu(userId: number, data: Omit<InsertWeeklyMenu, "userId">): Promise<WeeklyMenu> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.insert(weeklyMenus).values({ ...data, userId });
+  const created = await db.select().from(weeklyMenus).where(eq(weeklyMenus.id, data.id)).limit(1);
+  return created[0];
+}
+
+export async function getWeeklyMenusByUserId(userId: number): Promise<WeeklyMenu[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(weeklyMenus).where(eq(weeklyMenus.userId, userId)).orderBy(desc(weeklyMenus.updatedAt));
+}
+
+export async function updateWeeklyMenuById(id: string, userId: number, data: Partial<Omit<WeeklyMenu, "id" | "userId" | "createdAt">>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(weeklyMenus)
+    .set({ ...data, updatedAt: new Date() })
+    .where(and(eq(weeklyMenus.id, id), eq(weeklyMenus.userId, userId)));
+}
+
+export async function deleteWeeklyMenuById(id: string, userId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.delete(weeklyMenus).where(and(eq(weeklyMenus.id, id), eq(weeklyMenus.userId, userId)));
 }

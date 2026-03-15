@@ -15,6 +15,7 @@ import {
   createMenuShare,
   getDailyMenuByUserId,
   getMenuShareById,
+  updateMenuShareMetadata,
   getRecipeById,
   getIngredientsByRecipeId,
   getStepsByRecipeId,
@@ -53,6 +54,7 @@ async function startServer() {
         id: shareId,
         title,
         itemsJson: JSON.stringify(items.map((i) => ({ recipeId: i.recipeId, servings: i.servings }))),
+        metadataJson: JSON.stringify({}),
       });
 
       return res.json({ id: shareId });
@@ -94,12 +96,31 @@ async function startServer() {
       );
 
       return res.json({
-        share: { id: share.id, title: share.title, createdAt: share.createdAt },
+        share: {
+          id: share.id,
+          title: share.title,
+          createdAt: share.createdAt,
+          metadata: share.metadataJson ? JSON.parse(share.metadataJson) : {},
+        },
         items: itemResults.filter(Boolean),
       });
     } catch (err) {
       console.error("[Share Menu] Fetch error:", err);
       return res.status(500).json({ error: "Failed to load share" });
+    }
+  });
+
+  app.put("/api/share-menu/:id/collaboration", async (req: any, res: any) => {
+    try {
+      const shareId = req.params.id;
+      const share = await getMenuShareById(shareId);
+      if (!share) return res.status(404).json({ error: "Share not found" });
+
+      await updateMenuShareMetadata(shareId, JSON.stringify(req.body ?? {}));
+      return res.json({ success: true });
+    } catch (err) {
+      console.error("[Share Menu] Collaboration update error:", err);
+      return res.status(500).json({ error: "Failed to save collaboration state" });
     }
   });
 

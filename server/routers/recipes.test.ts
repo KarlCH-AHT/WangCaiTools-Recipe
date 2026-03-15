@@ -10,9 +10,13 @@ vi.mock("../db", () => ({
   updateRecipe: vi.fn(),
   deleteRecipe: vi.fn(),
   getIngredientsByRecipeId: vi.fn(),
+  getIngredientsByRecipeIds: vi.fn(),
   getStepsByRecipeId: vi.fn(),
+  getStepsByRecipeIds: vi.fn(),
   getTagsByRecipeId: vi.fn(),
+  getTagsByRecipeIds: vi.fn(),
   getImagesByRecipeId: vi.fn(),
+  getImagesByRecipeIds: vi.fn(),
   deleteIngredientsByRecipeId: vi.fn(),
   deleteStepsByRecipeId: vi.fn(),
   deleteTagsByRecipeId: vi.fn(),
@@ -22,7 +26,9 @@ vi.mock("../db", () => ({
   createStep: vi.fn(),
   createTag: vi.fn(),
   getDailyMenuByUserId: vi.fn(),
+  getDailyMenuItemByRecipeId: vi.fn(),
   addToDailyMenu: vi.fn(),
+  updateDailyMenuItemServings: vi.fn(),
   removeFromDailyMenu: vi.fn(),
   clearDailyMenu: vi.fn(),
 }));
@@ -69,10 +75,10 @@ describe("recipes router", () => {
   describe("list", () => {
     it("should return all recipes for the user", async () => {
       vi.mocked(db.getRecipesByUserId).mockResolvedValue([mockRecipe]);
-      vi.mocked(db.getIngredientsByRecipeId).mockResolvedValue([mockIngredient]);
-      vi.mocked(db.getStepsByRecipeId).mockResolvedValue([mockStep]);
-      vi.mocked(db.getTagsByRecipeId).mockResolvedValue([]);
-      vi.mocked(db.getImagesByRecipeId).mockResolvedValue([]);
+      vi.mocked(db.getIngredientsByRecipeIds).mockResolvedValue([mockIngredient]);
+      vi.mocked(db.getStepsByRecipeIds).mockResolvedValue([mockStep]);
+      vi.mocked(db.getTagsByRecipeIds).mockResolvedValue([]);
+      vi.mocked(db.getImagesByRecipeIds).mockResolvedValue([]);
 
       const caller = recipesRouter.createCaller({ user: mockUser, req: {} as any, res: {} as any });
       const result = await caller.list();
@@ -197,6 +203,7 @@ describe("recipes router", () => {
       };
 
       vi.mocked(db.getRecipeById).mockResolvedValue(mockRecipe);
+      vi.mocked(db.getDailyMenuItemByRecipeId).mockResolvedValue(undefined);
       vi.mocked(db.addToDailyMenu).mockResolvedValue(mockMenuItem);
 
       const caller = recipesRouter.createCaller({ user: mockUser, req: {} as any, res: {} as any });

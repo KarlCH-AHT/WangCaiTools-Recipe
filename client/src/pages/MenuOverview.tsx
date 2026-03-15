@@ -134,11 +134,17 @@ export default function MenuOverview() {
 
   const handleShareMenu = async () => {
     try {
+      const dateLabel = new Intl.DateTimeFormat(undefined, {
+        month: "short",
+        day: "numeric",
+      }).format(new Date());
       const res = await fetch("/api/share-menu", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ title: t("menuOverview") }),
+        body: JSON.stringify({
+          title: `${dateLabel} ${t("familySharedMenuTitle") || "家庭菜单"}`,
+        }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));

@@ -8,12 +8,17 @@ import {
   createRecipe,
   getRecipesByUserId,
   getRecipeById,
+  getRecipesByIds,
   updateRecipe,
   deleteRecipe,
   getIngredientsByRecipeId,
+  getIngredientsByRecipeIds,
   getStepsByRecipeId,
+  getStepsByRecipeIds,
   getTagsByRecipeId,
+  getTagsByRecipeIds,
   getImagesByRecipeId,
+  getImagesByRecipeIds,
   deleteIngredientsByRecipeId,
   deleteStepsByRecipeId,
   deleteTagsByRecipeId,
@@ -23,9 +28,15 @@ import {
   createTag,
   createRecipeImage,
   getDailyMenuByUserId,
+  getDailyMenuItemByRecipeId,
   addToDailyMenu,
   removeFromDailyMenu,
   clearDailyMenu,
+  updateDailyMenuItemServings,
+  createWeeklyMenu,
+  getWeeklyMenusByUserId,
+  updateWeeklyMenuById,
+  deleteWeeklyMenuById,
 } from "../db";
 import { nanoid } from "nanoid";
 
@@ -93,30 +104,62 @@ const TagInputSchema = z.object({
   tag: z.string().min(1),
 });
 
+const WeeklyMenuItemSchema = z.object({
+  recipeId: z.string(),
+  servings: z.number().min(0.5),
+});
+
+const WeeklyMenuItemsSchema = z.record(z.string(), z.array(WeeklyMenuItemSchema));
+
+function attachRecipeRelations(recipes: any[], ingredients: any[], steps: any[], tags: any[], images: any[]) {
+  const ingredientMap = new Map<string, any[]>();
+  const stepMap = new Map<string, any[]>();
+  const tagMap = new Map<string, any[]>();
+  const imageMap = new Map<string, string[]>();
+
+  ingredients.forEach((item) => {
+    const bucket = ingredientMap.get(item.recipeId) ?? [];
+    bucket.push(item);
+    ingredientMap.set(item.recipeId, bucket);
+  });
+  steps.forEach((item) => {
+    const bucket = stepMap.get(item.recipeId) ?? [];
+    bucket.push(item);
+    stepMap.set(item.recipeId, bucket);
+  });
+  tags.forEach((item) => {
+    const bucket = tagMap.get(item.recipeId) ?? [];
+    bucket.push(item);
+    tagMap.set(item.recipeId, bucket);
+  });
+  images.forEach((item) => {
+    const bucket = imageMap.get(item.recipeId) ?? [];
+    bucket.push(item.url);
+    imageMap.set(item.recipeId, bucket);
+  });
+
+  return recipes.map((recipe) => ({
+    ...recipe,
+    ingredients: ingredientMap.get(recipe.id) ?? [],
+    steps: stepMap.get(recipe.id) ?? [],
+    tags: tagMap.get(recipe.id) ?? [],
+    images: imageMap.get(recipe.id) ?? [],
+  }));
+}
+
 export const recipesRouter = router({
   // Get all recipes for current user
   list: protectedProcedure.query(async ({ ctx }) => {
     const recipes = await getRecipesByUserId(ctx.user.id);
-    
-    // Fetch related data for each recipe
-    const recipesWithData = await Promise.all(
-      recipes.map(async (recipe) => {
-        const ingredients = await getIngredientsByRecipeId(recipe.id);
-        const steps = await getStepsByRecipeId(recipe.id);
-        const tags = await getTagsByRecipeId(recipe.id);
-        const images = await getImagesByRecipeId(recipe.id);
-        
-        return {
-          ...recipe,
-          ingredients,
-          steps,
-          tags,
-          images: images.map(img => img.url),
-        };
-      })
-    );
-    
-    return recipesWithData;
+    const recipeIds = recipes.map((recipe) => recipe.id);
+    const [ingredients, steps, tags, images] = await Promise.all([
+      getIngredientsByRecipeIds(recipeIds),
+      getStepsByRecipeIds(recipeIds),
+      getTagsByRecipeIds(recipeIds),
+      getImagesByRecipeIds(recipeIds),
+    ]);
+
+    return attachRecipeRelations(recipes, ingredients, steps, tags, images);
   }),
 
   // Get single recipe with all related data
@@ -384,14 +427,37 @@ export const recipesRouter = router({
     .mutation(async ({ ctx, input }) => {
       const recipe = await getRecipeById(input.recipeId, ctx.user.id);
       if (!recipe) throw new Error("Recipe not found");
-      
-      const item = await addToDailyMenu(ctx.user.id, {
+
+      const existingItem = await getDailyMenuItemByRecipeId(ctx.user.id, input.recipeId);
+      if (existingItem) {
+        await updateDailyMenuItemServings(existingItem.id, ctx.user.id, input.servings);
+        return { ...existingItem, servings: input.servings };
+      }
+
+      return addToDailyMenu(ctx.user.id, {
         id: nanoid(),
         recipeId: input.recipeId,
         servings: input.servings,
       });
-      
-      return item;
+    }),
+
+  updateDailyMenuItem: protectedProcedure
+    .input(z.object({ recipeId: z.string(), servings: z.number().min(0.5) }))
+    .mutation(async ({ ctx, input }) => {
+      const existingItem = await getDailyMenuItemByRecipeId(ctx.user.id, input.recipeId);
+      if (!existingItem) throw new TRPCError({ code: "NOT_FOUND", message: "Menu item not found" });
+
+      await updateDailyMenuItemServings(existingItem.id, ctx.user.id, input.servings);
+      return { success: true };
+    }),
+
+  removeFromDailyMenuByRecipe: protectedProcedure
+    .input(z.object({ recipeId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const existingItem = await getDailyMenuItemByRecipeId(ctx.user.id, input.recipeId);
+      if (!existingItem) return { success: true };
+      await removeFromDailyMenu(existingItem.id, ctx.user.id);
+      return { success: true };
     }),
 
   removeFromDailyMenu: protectedProcedure
@@ -405,6 +471,57 @@ export const recipesRouter = router({
     await clearDailyMenu(ctx.user.id);
     return { success: true };
   }),
+
+  listWeeklyMenus: protectedProcedure.query(async ({ ctx }) => {
+    const rows = await getWeeklyMenusByUserId(ctx.user.id);
+    return rows.map((row) => ({
+      ...row,
+      items: JSON.parse(row.itemsJson || "{}") as Record<string, Array<{ recipeId: string; servings: number }>>,
+    }));
+  }),
+
+  createWeeklyMenu: protectedProcedure
+    .input(z.object({
+      title: z.string().optional(),
+      startDate: z.string(),
+      items: WeeklyMenuItemsSchema.optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const created = await createWeeklyMenu(ctx.user.id, {
+        id: nanoid(),
+        title: input.title,
+        startDate: input.startDate,
+        itemsJson: JSON.stringify(input.items ?? {}),
+      });
+
+      return {
+        ...created,
+        items: JSON.parse(created.itemsJson || "{}"),
+      };
+    }),
+
+  updateWeeklyMenu: protectedProcedure
+    .input(z.object({
+      id: z.string(),
+      title: z.string().optional(),
+      startDate: z.string().optional(),
+      items: WeeklyMenuItemsSchema.optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await updateWeeklyMenuById(input.id, ctx.user.id, {
+        title: input.title,
+        startDate: input.startDate,
+        itemsJson: input.items ? JSON.stringify(input.items) : undefined,
+      });
+      return { success: true };
+    }),
+
+  deleteWeeklyMenu: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await deleteWeeklyMenuById(input.id, ctx.user.id);
+      return { success: true };
+    }),
 
   initializeSampleRecipes: protectedProcedure.mutation(async ({ ctx }) => {
     const { sampleRecipes } = await import("../sampleRecipes");

@@ -112,10 +112,23 @@ export const menuShares = mysqlTable("menuShares", {
   userId: int("userId").notNull(),
   title: varchar("title", { length: 255 }),
   itemsJson: text("itemsJson").notNull(),
+  metadataJson: text("metadataJson"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const weeklyMenus = mysqlTable("weeklyMenus", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  userId: int("userId").notNull(),
+  title: varchar("title", { length: 255 }),
+  startDate: varchar("startDate", { length: 16 }).notNull(),
+  itemsJson: text("itemsJson").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
 export type DailyMenuItem = typeof dailyMenuItems.$inferSelect;
 export type InsertDailyMenuItem = typeof dailyMenuItems.$inferInsert;
 export type MenuShare = typeof menuShares.$inferSelect;
 export type InsertMenuShare = typeof menuShares.$inferInsert;
+export type WeeklyMenu = typeof weeklyMenus.$inferSelect;
+export type InsertWeeklyMenu = typeof weeklyMenus.$inferInsert;

@@ -60,6 +60,7 @@ export interface DailyMenu {
 
 export interface WeeklyMenu {
   id: string;
+  title?: string;
   startDate: string;
   items: { [day: string]: DailyMenuItem[] };
   createdAt: string;

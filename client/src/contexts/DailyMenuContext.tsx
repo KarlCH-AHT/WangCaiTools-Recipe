@@ -1,13 +1,13 @@
-import React, { createContext, useContext, useState, useCallback } from "react";
-import { DailyMenu, DailyMenuItem } from "@/types/recipe";
-import { nanoid } from "nanoid";
+import React, { createContext, useContext, useMemo, useCallback } from "react";
+import { DailyMenu } from "@/types/recipe";
+import { trpc } from "@/lib/trpc";
 
 interface DailyMenuContextType {
-  dailyMenu: DailyMenu | null;
-  addMenuItem: (recipeId: string, servings: number) => void;
-  removeMenuItem: (recipeId: string) => void;
-  updateMenuItem: (recipeId: string, servings: number) => void;
-  clearMenu: () => void;
+  dailyMenu: DailyMenu;
+  addMenuItem: (recipeId: string, servings: number) => Promise<void>;
+  removeMenuItem: (recipeId: string) => Promise<void>;
+  updateMenuItem: (recipeId: string, servings: number) => Promise<void>;
+  clearMenu: () => Promise<void>;
   getTodayMenu: () => DailyMenu;
 }
 
@@ -19,114 +19,58 @@ function getTodayDateString(): string {
 }
 
 export function DailyMenuProvider({ children }: { children: React.ReactNode }) {
-  const [dailyMenu, setDailyMenu] = useState<DailyMenu | null>(() => {
-    const stored = localStorage.getItem("dailyMenu");
-    if (stored) {
-      const menu = JSON.parse(stored);
-      // If the stored menu is from a different day, start fresh
-      if (menu.date !== getTodayDateString()) {
-        return null;
-      }
-      return menu;
-    }
-    return null;
+  const utils = trpc.useUtils();
+  const { data } = trpc.recipes.getDailyMenu.useQuery(undefined, {
+    enabled: true,
   });
+  const addToDailyMenuMutation = trpc.recipes.addToDailyMenu.useMutation();
+  const updateDailyMenuMutation = trpc.recipes.updateDailyMenuItem.useMutation();
+  const removeDailyMenuMutation = trpc.recipes.removeFromDailyMenuByRecipe.useMutation();
+  const clearDailyMenuMutation = trpc.recipes.clearDailyMenu.useMutation();
 
-  const saveToLocalStorage = useCallback((menu: DailyMenu) => {
-    localStorage.setItem("dailyMenu", JSON.stringify(menu));
-  }, []);
-
-  const getTodayMenu = useCallback((): DailyMenu => {
-    if (dailyMenu && dailyMenu.date === getTodayDateString()) {
-      return dailyMenu;
-    }
-    const newMenu: DailyMenu = {
-      id: nanoid(),
+  const dailyMenu = useMemo<DailyMenu>(() => {
+    return {
+      id: "server-daily-menu",
       date: getTodayDateString(),
-      items: [],
+      items: (data ?? []).map((item: any) => ({
+        recipeId: item.recipeId,
+        servings: item.servings,
+      })),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    setDailyMenu(newMenu);
-    saveToLocalStorage(newMenu);
-    return newMenu;
-  }, [dailyMenu, saveToLocalStorage]);
+  }, [data]);
 
-  const addMenuItem = useCallback(
-    (recipeId: string, servings: number) => {
-      const menu = getTodayMenu();
-      const existingItem = menu.items.find((item) => item.recipeId === recipeId);
+  const invalidate = useCallback(async () => {
+    await utils.recipes.getDailyMenu.invalidate();
+  }, [utils]);
 
-      let updatedItems: DailyMenuItem[];
-      if (existingItem) {
-        // If recipe already in menu, update servings
-        updatedItems = menu.items.map((item) =>
-          item.recipeId === recipeId ? { ...item, servings } : item
-        );
-      } else {
-        // Add new item
-        updatedItems = [...menu.items, { recipeId, servings }];
-      }
+  const addMenuItem = useCallback(async (recipeId: string, servings: number) => {
+    await addToDailyMenuMutation.mutateAsync({ recipeId, servings });
+    await invalidate();
+  }, [addToDailyMenuMutation, invalidate]);
 
-      const updatedMenu: DailyMenu = {
-        ...menu,
-        items: updatedItems,
-        updatedAt: new Date().toISOString(),
-      };
-      setDailyMenu(updatedMenu);
-      saveToLocalStorage(updatedMenu);
-    },
-    [getTodayMenu, saveToLocalStorage]
-  );
+  const removeMenuItem = useCallback(async (recipeId: string) => {
+    await removeDailyMenuMutation.mutateAsync({ recipeId });
+    await invalidate();
+  }, [removeDailyMenuMutation, invalidate]);
 
-  const removeMenuItem = useCallback(
-    (recipeId: string) => {
-      const menu = getTodayMenu();
-      const updatedItems = menu.items.filter((item) => item.recipeId !== recipeId);
-      const updatedMenu: DailyMenu = {
-        ...menu,
-        items: updatedItems,
-        updatedAt: new Date().toISOString(),
-      };
-      setDailyMenu(updatedMenu);
-      saveToLocalStorage(updatedMenu);
-    },
-    [getTodayMenu, saveToLocalStorage]
-  );
+  const updateMenuItem = useCallback(async (recipeId: string, servings: number) => {
+    await updateDailyMenuMutation.mutateAsync({ recipeId, servings });
+    await invalidate();
+  }, [updateDailyMenuMutation, invalidate]);
 
-  const updateMenuItem = useCallback(
-    (recipeId: string, servings: number) => {
-      const menu = getTodayMenu();
-      const updatedItems = menu.items.map((item) =>
-        item.recipeId === recipeId ? { ...item, servings } : item
-      );
-      const updatedMenu: DailyMenu = {
-        ...menu,
-        items: updatedItems,
-        updatedAt: new Date().toISOString(),
-      };
-      setDailyMenu(updatedMenu);
-      saveToLocalStorage(updatedMenu);
-    },
-    [getTodayMenu, saveToLocalStorage]
-  );
+  const clearMenu = useCallback(async () => {
+    await clearDailyMenuMutation.mutateAsync();
+    await invalidate();
+  }, [clearDailyMenuMutation, invalidate]);
 
-  const clearMenu = useCallback(() => {
-    const newMenu: DailyMenu = {
-      id: nanoid(),
-      date: getTodayDateString(),
-      items: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    setDailyMenu(newMenu);
-    saveToLocalStorage(newMenu);
-  }, [saveToLocalStorage]);
+  const getTodayMenu = useCallback(() => dailyMenu, [dailyMenu]);
 
   return (
     <DailyMenuContext.Provider
       value={{
-        dailyMenu: dailyMenu || getTodayMenu(),
+        dailyMenu,
         addMenuItem,
         removeMenuItem,
         updateMenuItem,
@@ -144,9 +88,5 @@ export function useDailyMenu() {
   if (!context) {
     throw new Error("useDailyMenu must be used within DailyMenuProvider");
   }
-  // Ensure dailyMenu is never null
-  return {
-    ...context,
-    dailyMenu: context.dailyMenu || context.getTodayMenu(),
-  };
+  return context;
 }

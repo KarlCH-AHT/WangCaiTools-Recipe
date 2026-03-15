@@ -42,6 +42,7 @@ function makeDevUser(params: {
     openId: params.openId,
     name: params.name,
     email: params.email,
+    avatarUrl: null,
     passwordHash: params.passwordHash,
     loginMethod: "email",
     role: "user",
