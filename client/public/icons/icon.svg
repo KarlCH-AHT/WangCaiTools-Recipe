@@ -1,46 +1,30 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Wangcai recipe icon">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="WangCai icon">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#fff7ed"/>
-      <stop offset="48%" stop-color="#ffedd5"/>
-      <stop offset="100%" stop-color="#fed7aa"/>
+      <stop offset="0%" stop-color="#fffaf0"/>
+      <stop offset="100%" stop-color="#ffedd5"/>
     </linearGradient>
-    <linearGradient id="pot" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#fb7185"/>
-      <stop offset="100%" stop-color="#f97316"/>
+    <linearGradient id="ink" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f97316"/>
+      <stop offset="100%" stop-color="#ea580c"/>
     </linearGradient>
-    <linearGradient id="steam" x1="0" y1="1" x2="1" y2="0">
-      <stop offset="0%" stop-color="#34d399" stop-opacity=".2"/>
-      <stop offset="100%" stop-color="#10b981" stop-opacity=".9"/>
-    </linearGradient>
-    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#c2410c" flood-opacity=".25"/>
-    </filter>
   </defs>
 
   <rect width="512" height="512" rx="120" fill="url(#bg)"/>
-  <circle cx="112" cy="92" r="22" fill="#fdba74" opacity=".55"/>
-  <circle cx="430" cy="126" r="18" fill="#a7f3d0" opacity=".65"/>
-  <circle cx="392" cy="72" r="10" fill="#fda4af" opacity=".8"/>
 
-  <path d="M196 144c18-28 18-52 0-72" stroke="url(#steam)" stroke-width="14" stroke-linecap="round" fill="none"/>
-  <path d="M256 132c18-28 18-52 0-72" stroke="url(#steam)" stroke-width="14" stroke-linecap="round" fill="none"/>
-  <path d="M316 144c18-28 18-52 0-72" stroke="url(#steam)" stroke-width="14" stroke-linecap="round" fill="none"/>
+  <circle cx="108" cy="104" r="12" fill="#fdba74" opacity=".75"/>
+  <circle cx="404" cy="402" r="10" fill="#fed7aa" opacity=".85"/>
 
-  <g filter="url(#soft)">
-    <rect x="112" y="200" width="288" height="186" rx="78" fill="url(#pot)"/>
-    <rect x="132" y="184" width="248" height="50" rx="24" fill="#ea580c"/>
-    <rect x="88" y="244" width="34" height="94" rx="16" fill="#ea580c"/>
-    <rect x="390" y="244" width="34" height="94" rx="16" fill="#ea580c"/>
-  </g>
+  <text
+    x="256"
+    y="292"
+    text-anchor="middle"
+    font-family="'Brush Script MT','Snell Roundhand','Segoe Script',cursive"
+    font-size="124"
+    font-weight="600"
+    letter-spacing="1.5"
+    fill="url(#ink)"
+  >WangCai</text>
 
-  <circle cx="186" cy="294" r="16" fill="#fff7ed"/>
-  <circle cx="326" cy="294" r="16" fill="#fff7ed"/>
-  <circle cx="191" cy="289" r="4" fill="#fb7185"/>
-  <circle cx="331" cy="289" r="4" fill="#fb7185"/>
-  <ellipse cx="256" cy="336" rx="24" ry="18" fill="#fff7ed"/>
-  <path d="M232 360c14 15 34 15 48 0" stroke="#fff7ed" stroke-width="8" stroke-linecap="round" fill="none"/>
-
-  <rect x="172" y="412" width="168" height="24" rx="12" fill="#0f766e" opacity=".92"/>
-  <circle cx="256" cy="424" r="8" fill="#ccfbf1"/>
+  <path d="M150 336c30 16 64 24 106 24 47 0 86-9 121-29" stroke="#fb923c" stroke-width="8" stroke-linecap="round" fill="none" opacity=".75"/>
 </svg>
