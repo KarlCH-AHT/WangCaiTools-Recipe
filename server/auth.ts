@@ -110,6 +110,11 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(8),
+});
+
 export function registerAuthRoutes(app: Express) {
   // Register
   app.post("/api/auth/register", async (req: Request, res: Response) => {
@@ -244,5 +249,57 @@ export function registerAuthRoutes(app: Express) {
   app.post("/api/auth/logout", (req: Request, res: Response) => {
     res.clearCookie(COOKIE_NAME, { ...cookieOptions(req), maxAge: -1 });
     res.json({ success: true });
+  });
+
+  // Change password (must be logged in)
+  app.post("/api/auth/change-password", async (req: Request, res: Response) => {
+    const parsed = changePasswordSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "Invalid input", details: parsed.error.flatten() });
+      return;
+    }
+    const { currentPassword, newPassword } = parsed.data;
+
+    try {
+      const authUser = await authenticateRequest(req);
+      if (!authUser) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      if (isDevNoDbMode()) {
+        const devUser = devUsersByOpenId.get(authUser.openId);
+        if (!devUser || !devUser.passwordHash) {
+          res.status(401).json({ error: "Invalid password" });
+          return;
+        }
+        const valid = await bcrypt.compare(currentPassword, devUser.passwordHash);
+        if (!valid) {
+          res.status(401).json({ error: "Invalid password" });
+          return;
+        }
+        devUser.passwordHash = await bcrypt.hash(newPassword, 12);
+        res.json({ success: true, devNoDbMode: true });
+        return;
+      }
+
+      const dbUser = await db.getUserByOpenId(authUser.openId);
+      if (!dbUser || !dbUser.passwordHash) {
+        res.status(401).json({ error: "Invalid password" });
+        return;
+      }
+      const valid = await bcrypt.compare(currentPassword, dbUser.passwordHash);
+      if (!valid) {
+        res.status(401).json({ error: "Invalid password" });
+        return;
+      }
+
+      const passwordHash = await bcrypt.hash(newPassword, 12);
+      await db.upsertUser({ openId: dbUser.openId, passwordHash, lastSignedIn: new Date() });
+      res.json({ success: true });
+    } catch (err) {
+      console.error("[Auth] Change password error:", err);
+      res.status(500).json({ error: "Change password failed" });
+    }
   });
 }

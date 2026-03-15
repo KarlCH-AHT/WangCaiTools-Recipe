@@ -16,6 +16,7 @@ import DailyMenuPage from "./pages/DailyMenuPage";
 import WeeklyMenuPage from "./pages/WeeklyMenuPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import ChangePasswordPage from "./pages/ChangePasswordPage";
 import ImmersiveCookingAssistant from "./pages/ImmersiveCookingAssistant";
 
 /**
@@ -31,6 +32,7 @@ function Router() {
       <Route path={"/"} component={Home} />
       <Route path={"/login"} component={LoginPage} />
       <Route path={"/register"} component={RegisterPage} />
+      <Route path={"/change-password"} component={ChangePasswordPage} />
       <Route path={"/recipe/:id"} component={RecipeDetail} />
       <Route path={"/cook/:id"} component={CookingMode} />
       <Route path={"/menu"} component={MenuOverview} />

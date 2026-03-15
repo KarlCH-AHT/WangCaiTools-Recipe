@@ -339,6 +339,10 @@ export default function Home() {
                       <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
                     </div>
                     <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate("/change-password")} className="text-sm rounded-lg">
+                      {t("changePassword") || "Change password"}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout} className="text-sm rounded-lg">
                       {t("logout") || "Sign out"}
                     </DropdownMenuItem>
