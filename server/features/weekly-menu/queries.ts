@@ -1,24 +1,15 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { weeklyMenus, type InsertWeeklyMenu, type WeeklyMenu } from "../../../drizzle/schema";
 import { getDb } from "../../db";
-
-function toSqlDate(date: Date): Date {
-  const next = new Date(date);
-  next.setMilliseconds(0);
-  return next;
-}
 
 export async function createWeeklyMenu(userId: number, data: Omit<InsertWeeklyMenu, "userId">): Promise<WeeklyMenu> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const now = toSqlDate(new Date());
-  await db.insert(weeklyMenus).values({
-    ...data,
-    userId,
-    createdAt: now,
-    updatedAt: now,
-  });
+  await db.execute(sql`
+    insert into weeklyMenus (id, userId, title, startDate, itemsJson, createdAt, updatedAt)
+    values (${data.id}, ${userId}, ${data.title ?? null}, ${data.startDate}, ${data.itemsJson}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+  `);
   const created = await db.select().from(weeklyMenus).where(eq(weeklyMenus.id, data.id)).limit(1);
   return created[0];
 }
@@ -49,7 +40,7 @@ export async function updateWeeklyMenuById(id: string, userId: number, data: Par
 
   await db
     .update(weeklyMenus)
-    .set({ ...data, updatedAt: toSqlDate(new Date()) })
+    .set({ ...data, updatedAt: sql`CURRENT_TIMESTAMP` as any })
     .where(and(eq(weeklyMenus.id, id), eq(weeklyMenus.userId, userId)));
 }
 
