@@ -23,6 +23,9 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
 
+  // Respect reverse proxy headers so req.secure is accurate in production.
+  app.set("trust proxy", 1);
+
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 

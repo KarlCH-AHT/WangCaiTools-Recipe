@@ -87,7 +87,6 @@ export async function authenticateRequest(req: Request): Promise<User | null> {
 
 function cookieOptions(req: Request) {
   const isSecure =
-    ENV.isProduction ||
     req.headers["x-forwarded-proto"] === "https" ||
     req.secure;
   return {
@@ -143,6 +142,12 @@ export function registerAuthRoutes(app: Express) {
         const token = await signSession(openId);
         res.cookie(COOKIE_NAME, token, { ...cookieOptions(req), maxAge: ONE_YEAR_MS });
         res.json({ user, devNoDbMode: true });
+        return;
+      }
+
+      const dbConn = await db.getDb();
+      if (!dbConn) {
+        res.status(503).json({ error: "Database not available" });
         return;
       }
 
@@ -204,6 +209,12 @@ export function registerAuthRoutes(app: Express) {
           user: { id: user.id, name: user.name, email: user.email, role: user.role },
           devNoDbMode: true,
         });
+        return;
+      }
+
+      const dbConn = await db.getDb();
+      if (!dbConn) {
+        res.status(503).json({ error: "Database not available" });
         return;
       }
 
