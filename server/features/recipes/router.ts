@@ -857,8 +857,8 @@ Return ONLY valid JSON with this exact structure (no tags field):
             const ext = contentType.includes('png') ? 'png' : contentType.includes('webp') ? 'webp' : 'jpg';
             const key = `recipe-images/ai-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
             const { url } = await storagePut(key, imgBuffer, contentType);
-            recipeImageUrl = url;
-            console.log(`[AI Recipe] Image uploaded to S3: ${url}`);
+            recipeImageUrl = url || thumbUrl;
+            console.log(`[AI Recipe] Image ready: ${recipeImageUrl}`);
           }
         } else {
           console.warn(`[AI Recipe] No Wikipedia image found for: ${dishTitle}`);

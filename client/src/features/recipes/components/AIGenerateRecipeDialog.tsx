@@ -25,6 +25,8 @@ export interface GeneratedRecipeData {
   ingredients: { name: string; amount: number; unit: string }[];
   steps: { number: number; description: string }[];
   tags: string[];
+  imageUrl?: string;
+  images?: string[];
 }
 
 interface AIGenerateRecipeDialogProps {

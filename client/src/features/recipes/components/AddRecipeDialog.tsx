@@ -263,12 +263,26 @@ export default function AddRecipeDialog({ open, onOpenChange }: AddRecipeDialogP
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 placeholder={t("newCategory") || "分类"}
-                list="simple-category-suggestions"
                 className="w-full rounded-xl border bg-zinc-50 px-3 py-2 text-sm outline-none"
               />
-              <datalist id="simple-category-suggestions">
-                {existingCategories.map((cat) => <option key={cat} value={cat} />)}
-              </datalist>
+              {existingCategories.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {existingCategories.slice(0, 10).map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setCategory(cat)}
+                      className={`rounded-full px-2.5 py-1 text-xs transition-colors ${
+                        category === cat
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
               <div className="grid grid-cols-3 gap-2">
                 <input type="number" min="1" value={servings} onChange={(e) => setServings(e.target.value)} placeholder={t("portions")} className="rounded-xl border bg-zinc-50 px-3 py-2 text-sm" />
                 <input type="number" min="0" value={prepTime} onChange={(e) => setPrepTime(e.target.value)} placeholder={t("prepTime")} className="rounded-xl border bg-zinc-50 px-3 py-2 text-sm" />
