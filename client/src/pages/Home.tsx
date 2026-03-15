@@ -326,19 +326,23 @@ export default function Home() {
               {user && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2 px-2.5 py-2 bg-card border border-border rounded-xl text-xs font-medium text-foreground hover:bg-muted/50 transition-colors">
-                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-muted text-muted-foreground text-[11px] font-semibold">
-                        {(user.name || user.email || "?").slice(0, 1).toUpperCase()}
-                      </span>
-                      <span className="max-w-[120px] truncate">{user.name || user.email}</span>
-                      <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                    <button
+                      className="flex items-center justify-center w-8 h-8 rounded-full bg-muted text-muted-foreground hover:bg-muted/80 transition-colors overflow-hidden"
+                      aria-label="Account"
+                    >
+                      {user.avatarUrl ? (
+                        <img src={user.avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-[11px] font-semibold">
+                          {(user.name || user.email || "?").slice(0, 1).toUpperCase()}
+                        </span>
+                      )}
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-52 rounded-xl">
-                    <div className="px-3 py-2">
-                      <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
-                    </div>
-                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate("/account")} className="text-sm rounded-lg">
+                      {t("accountManagement") || "Account"}
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate("/change-password")} className="text-sm rounded-lg">
                       {t("changePassword") || "Change password"}
                     </DropdownMenuItem>
@@ -353,21 +357,22 @@ export default function Home() {
               {/* MenuOverview – prominent standalone button */}
               <button
                 onClick={() => navigate("/menu")}
-                className="flex items-center gap-1.5 px-3 py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl text-xs font-semibold transition-all hover:bg-amber-100 active:scale-95"
+                className="flex items-center justify-center w-8 h-8 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl text-xs font-semibold transition-all hover:bg-amber-100 active:scale-95"
+                aria-label={t("menuOverview") || "菜单概览"}
+                title={t("menuOverview") || "菜单概览"}
               >
                 <UtensilsCrossed className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">{t("menuOverview") || "菜单概览"}</span>
-                <span className="sm:hidden">菜单</span>
               </button>
 
               {/* Add recipe dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-xl text-xs font-semibold transition-all hover:bg-primary/90 active:scale-95">
+                  <button
+                    className="flex items-center justify-center w-8 h-8 bg-primary text-primary-foreground rounded-xl text-xs font-semibold transition-all hover:bg-primary/90 active:scale-95"
+                    aria-label={t("newRecipe") || "新建菜谱"}
+                    title={t("newRecipe") || "新建菜谱"}
+                  >
                     <Plus className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">{t("newRecipe")}</span>
-                    <span className="sm:hidden">新建</span>
-                    <ChevronDown className="w-3 h-3 opacity-70" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-44 rounded-xl">

@@ -196,7 +196,7 @@ export default function MenuOverview() {
             />
 
             {/* ── Filter row ── */}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
           {/* Category / Favorites dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -255,10 +255,8 @@ export default function MenuOverview() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <div className="flex-1" />
-
           {/* View mode toggle */}
-          <div className="flex items-center bg-muted rounded-lg p-0.5 gap-0.5 flex-shrink-0">
+          <div className="ml-auto flex items-center bg-muted rounded-lg p-0.5 gap-0.5 flex-shrink-0">
             {([["grid", Grid3x3], ["thumbnail", Grid2x2], ["list", List]] as [ViewMode, any][]).map(([mode, Icon]) => (
               <button
                 key={mode}
@@ -275,7 +273,7 @@ export default function MenuOverview() {
 
         {/* ── Tag multi-select row ── */}
             {allTags.length > 0 && (
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5" style={{ scrollbarWidth: "none" }}>
+              <div className="flex flex-wrap items-center gap-1.5 pb-0.5">
             {allTags.map((tag) => (
               <button
                 key={tag}

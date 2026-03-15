@@ -115,6 +115,11 @@ const changePasswordSchema = z.object({
   newPassword: z.string().min(8),
 });
 
+const updateProfileSchema = z.object({
+  name: z.string().min(1).optional(),
+  avatarUrl: z.string().url().optional(),
+});
+
 export function registerAuthRoutes(app: Express) {
   // Register
   app.post("/api/auth/register", async (req: Request, res: Response) => {
@@ -249,6 +254,43 @@ export function registerAuthRoutes(app: Express) {
   app.post("/api/auth/logout", (req: Request, res: Response) => {
     res.clearCookie(COOKIE_NAME, { ...cookieOptions(req), maxAge: -1 });
     res.json({ success: true });
+  });
+
+  // Update profile (name/avatar)
+  app.post("/api/auth/profile", async (req: Request, res: Response) => {
+    const parsed = updateProfileSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "Invalid input", details: parsed.error.flatten() });
+      return;
+    }
+    const { name, avatarUrl } = parsed.data;
+
+    try {
+      const authUser = await authenticateRequest(req);
+      if (!authUser) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      if (isDevNoDbMode()) {
+        const devUser = devUsersByOpenId.get(authUser.openId);
+        if (!devUser) {
+          res.status(404).json({ error: "User not found" });
+          return;
+        }
+        if (name !== undefined) devUser.name = name;
+        if (avatarUrl !== undefined) (devUser as any).avatarUrl = avatarUrl;
+        res.json({ user: devUser, devNoDbMode: true });
+        return;
+      }
+
+      await db.upsertUser({ openId: authUser.openId, name, avatarUrl });
+      const updated = await db.getUserByOpenId(authUser.openId);
+      res.json({ user: updated });
+    } catch (err) {
+      console.error("[Auth] Update profile error:", err);
+      res.status(500).json({ error: "Update profile failed" });
+    }
   });
 
   // Change password (must be logged in)
