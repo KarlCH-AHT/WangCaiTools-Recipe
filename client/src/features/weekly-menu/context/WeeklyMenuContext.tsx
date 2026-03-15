@@ -5,7 +5,7 @@ import { trpc } from "@/lib/trpc";
 
 interface WeeklyMenuContextType {
   weeklyMenus: WeeklyMenu[];
-  addWeeklyMenu: (menu: WeeklyMenu) => Promise<void>;
+  addWeeklyMenu: (menu: WeeklyMenu) => Promise<WeeklyMenu>;
   updateWeeklyMenu: (id: string, menu: Partial<WeeklyMenu>) => Promise<void>;
   deleteWeeklyMenu: (id: string) => Promise<void>;
   getWeeklyMenu: (id: string) => WeeklyMenu | undefined;
@@ -44,12 +44,20 @@ export function WeeklyMenuProvider({ children }: { children: React.ReactNode }) 
   }, [utils]);
 
   const addWeeklyMenu = useCallback(async (menu: WeeklyMenu) => {
-    await createWeeklyMenuMutation.mutateAsync({
+    const created = await createWeeklyMenuMutation.mutateAsync({
       title: (menu as any).title,
       startDate: menu.startDate,
       items: menu.items,
     });
     await invalidate();
+    return {
+      id: created.id,
+      title: created.title ?? undefined,
+      startDate: created.startDate,
+      items: created.items ?? {},
+      createdAt: created.createdAt instanceof Date ? created.createdAt.toISOString() : String(created.createdAt ?? ""),
+      updatedAt: created.updatedAt instanceof Date ? created.updatedAt.toISOString() : String(created.updatedAt ?? ""),
+    };
   }, [createWeeklyMenuMutation, invalidate]);
 
   const updateWeeklyMenu = useCallback(async (id: string, menu: Partial<WeeklyMenu>) => {

@@ -10,6 +10,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { nanoid } from "nanoid";
 import { WeeklyMenu } from "@/types/recipe";
 import { formatLocalDate } from "@/lib/date";
+import { toast } from "sonner";
 
 const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
 const DAY_LABELS_BY_LANGUAGE: Record<string, Record<string, string>> = {
@@ -56,18 +57,24 @@ export default function WeeklyMenuPage() {
   const [draftTitle, setDraftTitle] = useState("");
 
   const createNewWeeklyMenu = async () => {
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - startDate.getDay() + 1);
-    const localStartDate = formatLocalDate(startDate);
-    const menu: WeeklyMenu = {
-      id: nanoid(),
-      title: `${t("weeklyMenu") || "Weekly Menu"} ${localStartDate}`,
-      startDate: localStartDate,
-      items: {},
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    await addWeeklyMenu(menu);
+    try {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - startDate.getDay() + 1);
+      const localStartDate = formatLocalDate(startDate);
+      const menu: WeeklyMenu = {
+        id: nanoid(),
+        title: `${t("weeklyMenu") || "Weekly Menu"} ${localStartDate}`,
+        startDate: localStartDate,
+        items: {},
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      const created = await addWeeklyMenu(menu);
+      setSelectedMenuId(created.id);
+      toast.success(t("newWeeklyMenu") || "New weekly menu");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t("networkError") || "Failed to create weekly menu");
+    }
   };
 
   const selectedMenu = selectedMenuId ? weeklyMenus.find((m) => m.id === selectedMenuId) : weeklyMenus[0] || null;

@@ -456,15 +456,6 @@ export default function Home() {
                 </DropdownMenu>
               )}
 
-              <button
-                onClick={() => navigate("/menu")}
-                className="flex h-8 w-8 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 text-xs font-semibold text-amber-700 transition-all hover:bg-amber-100 active:scale-95"
-                aria-label={t("menuOverview") || "菜单概览"}
-                title={t("menuOverview") || "菜单概览"}
-              >
-                <UtensilsCrossed className="h-3.5 w-3.5" />
-              </button>
-
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
