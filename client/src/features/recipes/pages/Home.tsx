@@ -527,7 +527,7 @@ export default function Home() {
       <main className="container space-y-4 py-4 lg:py-3">
         <section className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           {homeMode === "collect" ? (
-            <div className="relative md:max-w-[560px] md:flex-1">
+            <div className="order-2 relative md:order-1 md:max-w-[560px] md:flex-1">
               <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
@@ -543,10 +543,10 @@ export default function Home() {
               )}
             </div>
           ) : (
-            <div />
+            <div className="hidden md:block" />
           )}
 
-          <div className="w-full rounded-full bg-amber-100/80 p-1 shadow-inner ring-1 ring-amber-200/80 md:w-auto">
+          <div className="order-1 w-full rounded-full bg-amber-100/80 p-1 shadow-inner ring-1 ring-amber-200/80 md:order-2 md:w-auto">
             <div className="flex items-center gap-1">
               {([
                 ["collect", t("collectModeTab") || "菜单收集"],
@@ -757,7 +757,7 @@ export default function Home() {
                     className="inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-2.5 text-sm font-medium text-background transition-all hover:opacity-90"
                   >
                     <UtensilsCrossed className="h-4 w-4" />
-                    {t("menuOverview") || "去点菜"}
+                    {t("menuOverview") || "点菜"}
                   </button>
                   <button
                     onClick={() => navigate("/weekly")}
@@ -868,21 +868,6 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <div className="rounded-[30px] border border-black/5 bg-white/95 p-5 shadow-[0_10px_30px_rgba(15,23,42,0.05)] dark:border-white/10 dark:bg-zinc-900/95">
-                    <p className="text-sm font-semibold text-foreground">{t("nextStep") || "下一步"}</p>
-                    <div className="mt-4 space-y-2">
-                      <button
-                        onClick={() => navigate("/menu")}
-                        className="flex w-full items-center justify-between rounded-[20px] bg-slate-900 px-4 py-3 text-left text-white transition-colors hover:bg-slate-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-                      >
-                        <div>
-                          <p className="text-sm font-medium">{t("menuOverview") || "去点菜"}</p>
-                          <p className="mt-1 text-[11px] text-white/70 dark:text-zinc-700">{t("planFromLibraryHint") || "从现有菜谱里选，补充今天或本周。"} </p>
-                        </div>
-                        <ArrowRight className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
                 </aside>
               </div>
             </section>

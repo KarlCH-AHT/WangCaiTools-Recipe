@@ -115,7 +115,7 @@ export const translations: Record<Language, Record<string, string>> = {
     healthy: "Gesund",
 
     // Menu Overview
-    menuOverview: "Menü-Übersicht",
+    menuOverview: "Gerichte wählen",
     browse: "Durchsuchen",
     filterByCategory: "Nach Kategorie filtern",
     allCategories: "Alle Kategorien",
@@ -392,7 +392,7 @@ export const translations: Record<Language, Record<string, string>> = {
     healthy: "健康",
 
     // Menu Overview
-    menuOverview: "菜单概览",
+    menuOverview: "点菜",
     browse: "浏览",
     filterByCategory: "按分类筛选",
     allCategories: "所有分类",
@@ -714,7 +714,7 @@ export const translations: Record<Language, Record<string, string>> = {
     healthy: "Healthy",
 
     // Menu Overview
-    menuOverview: "Menu Overview",
+    menuOverview: "Pick Dishes",
     browse: "Browse",
     filterByCategory: "Filter by category",
     allCategories: "All categories",
