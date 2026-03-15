@@ -167,6 +167,7 @@ export const translations: Record<Language, Record<string, string>> = {
     tryAgain: "Erneut versuchen",
     searchRecipes: "Rezepte durchsuchen",
     login: "Anmelden",
+    logout: "Abmelden",
     generateWithAI: "Mit KI generieren",
     generateRecipeWithAI: "Rezept mit KI generieren",
     generateRecipeDescription: "Gib Gerichtdetails ein und lass KI ein Rezept für dich erstellen",
@@ -361,6 +362,7 @@ export const translations: Record<Language, Record<string, string>> = {
     tryAgain: "重新尝试",
     searchRecipes: "搜索菜谱",
     login: "登录",
+    logout: "退出登录",
     generateWithAI: "AI 生成",
     generateRecipeWithAI: "用 AI 生成菜谱",
     generateRecipeDescription: "输入菜名、份量和描述，让 AI 为你生成菜谱",
@@ -405,6 +407,8 @@ export const translations: Record<Language, Record<string, string>> = {
     newRecipe: "New Recipe",
     backToOverview: "Back to recipes",
     back: "Back",
+    login: "Login",
+    logout: "Sign out",
 
     // Recipe List
     search: "Search",

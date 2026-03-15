@@ -211,7 +211,7 @@ function EmptyState({ onAdd, t }: { onAdd: () => void; t: (k: string) => string 
 // ── Main component ─────────────────────────────────────────────────────────
 export default function Home() {
   const [, navigate] = useLocation();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, logout } = useAuth();
   const { recipes, searchRecipes, toggleFavorite, loading: recipesLoading } = useRecipes();
   const { language, setLanguage } = useLanguage();
   const { theme, toggleTheme } = useTheme();
@@ -234,6 +234,10 @@ export default function Home() {
   }, []);
 
   const t = useTranslation();
+  const handleLogout = useCallback(async () => {
+    await logout();
+    window.location.href = getLoginUrl();
+  }, [logout]);
 
   const categories = useMemo(
     () => Array.from(new Set(recipes.map((r) => r.category).filter((c): c is string => Boolean(c)))),
@@ -319,6 +323,29 @@ export default function Home() {
 
             {/* Right actions */}
             <div className="flex items-center gap-2 flex-shrink-0">
+              {user && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-2 px-2.5 py-2 bg-card border border-border rounded-xl text-xs font-medium text-foreground hover:bg-muted/50 transition-colors">
+                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-muted text-muted-foreground text-[11px] font-semibold">
+                        {(user.name || user.email || "?").slice(0, 1).toUpperCase()}
+                      </span>
+                      <span className="max-w-[120px] truncate">{user.name || user.email}</span>
+                      <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-52 rounded-xl">
+                    <div className="px-3 py-2">
+                      <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className="text-sm rounded-lg">
+                      {t("logout") || "Sign out"}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+
               {/* MenuOverview – prominent standalone button */}
               <button
                 onClick={() => navigate("/menu")}
