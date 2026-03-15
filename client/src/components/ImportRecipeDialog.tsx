@@ -57,9 +57,7 @@ export default function ImportRecipeDialog({
         throw new Error("Unsupported file format. Please use JSON or CSV.");
       }
 
-      recipes.forEach((recipe) => {
-        addRecipe(recipe);
-      });
+      await Promise.all(recipes.map((recipe) => addRecipe(recipe)));
 
       toast.success(`成功导入 ${recipes.length} 道菜谱`);
       handleClose();

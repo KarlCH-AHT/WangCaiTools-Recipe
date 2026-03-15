@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback } from "react";
 import { useLocation } from "wouter";
 import {
   ArrowLeft, Clock, Users, Plus, Grid3x3, List, Grid2x2,
-  Heart, Check, UtensilsCrossed, ChevronDown, X, Eye,
+  Heart, Check, UtensilsCrossed, ChevronDown, X, Eye, Share2,
 } from "lucide-react";
 import { useRecipes } from "@/contexts/RecipeContext";
 import { useDailyMenu } from "@/contexts/DailyMenuContext";
@@ -10,6 +10,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 import PortionSelectionDialog from "@/components/PortionSelectionDialog";
 import RecipePreviewDialog from "@/components/RecipePreviewDialog";
 import RandomRecommendation from "@/components/RandomRecommendation";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -131,8 +132,34 @@ export default function MenuOverview() {
     setShowPreview(true);
   };
 
+  const handleShareMenu = async () => {
+    try {
+      const res = await fetch("/api/share-menu", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ title: t("menuOverview") }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        toast.error(data.error || t("shareFailed") || "Share failed");
+        return;
+      }
+      const data = await res.json();
+      const url = `${window.location.origin}/share/${data.id}`;
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        toast.success(t("shareLinkCopied") || "Link copied");
+      } else {
+        window.prompt(t("shareLinkPrompt") || "Copy this link", url);
+      }
+    } catch {
+      toast.error(t("shareFailed") || "Share failed");
+    }
+  };
+
   const categoryLabel = showFavoritesOnly
-    ? "❤️ 收藏"
+    ? t("favorites") || "收藏"
     : selectedCategory
     ? selectedCategory
     : t("all") || "全部";
@@ -154,13 +181,23 @@ export default function MenuOverview() {
                 <p className="text-xs text-muted-foreground">{t("selectRecipes")}</p>
               </div>
             </div>
-            <button
-              onClick={() => navigate("/today")}
-              className="flex items-center gap-2 px-3.5 py-2 bg-cyan-600 text-white rounded-xl text-xs font-semibold transition-all hover:bg-cyan-500 active:scale-95"
-            >
-              <UtensilsCrossed className="w-3.5 h-3.5" />
-              <span>开始烹饪</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleShareMenu}
+                className="flex items-center justify-center w-8 h-8 rounded-xl border border-border bg-card text-muted-foreground hover:bg-muted/60 transition-colors"
+                aria-label={t("shareMenu") || "Share menu"}
+                title={t("shareMenu") || "Share menu"}
+              >
+                <Share2 className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => navigate("/today")}
+                className="flex items-center gap-2 px-3.5 py-2 bg-cyan-600 text-white rounded-xl text-xs font-semibold transition-all hover:bg-cyan-500 active:scale-95"
+              >
+                <UtensilsCrossed className="w-3.5 h-3.5" />
+                <span>{t("startCooking") || "开始烹饪"}</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -169,18 +206,18 @@ export default function MenuOverview() {
         <section className="rounded-2xl border border-cyan-200/70 bg-white/85 p-4 shadow-sm dark:border-cyan-900/60 dark:bg-zinc-900/70">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-base font-semibold text-foreground">今日菜单工作台</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">计划导向视图，区别于首页菜谱收藏浏览</p>
+              <h2 className="text-base font-semibold text-foreground">{t("menuWorkbench") || "今日菜单工作台"}</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">{t("menuWorkbenchDesc") || "计划导向视图，区别于首页菜谱收藏浏览"}</p>
             </div>
             <div className="flex items-center gap-2 text-xs">
               <span className="rounded-full bg-cyan-100 px-2.5 py-1 font-medium text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300">
-                已选 {menuRecipes.length} 道
+                {t("selectedCount") || "已选"} {menuRecipes.length}
               </span>
               <span className="rounded-full bg-cyan-100 px-2.5 py-1 font-medium text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300">
-                约 {totalCookTime} 分钟
+                {t("totalCookTime") || "约时长"} {totalCookTime} {t("min") || "分钟"}
               </span>
               <span className="rounded-full bg-cyan-100 px-2.5 py-1 font-medium text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300">
-                总份量 {totalServings || 0}
+                {t("totalServings") || "总份量"} {totalServings || 0}
               </span>
             </div>
           </div>
@@ -229,7 +266,7 @@ export default function MenuOverview() {
                 onClick={() => { setShowFavoritesOnly(!showFavoritesOnly); setSelectedCategory(null); }}
                 className="gap-2 text-sm rounded-lg justify-between"
               >
-                <span className="flex items-center gap-1.5"><Heart className="w-3.5 h-3.5 text-red-400" />收藏</span>
+                <span className="flex items-center gap-1.5"><Heart className="w-3.5 h-3.5 text-red-400" />{t("favorites") || "收藏"}</span>
                 {showFavoritesOnly && <Check className="w-3.5 h-3.5 text-primary" />}
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -293,7 +330,7 @@ export default function MenuOverview() {
                 className="flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded-full text-[11px] text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all"
               >
                 <X className="w-3 h-3" />
-                清除
+                {t("clear") || "清除"}
               </button>
             )}
               </div>
@@ -301,7 +338,9 @@ export default function MenuOverview() {
 
         {/* Recipe count */}
             {displayRecipes.length > 0 && (
-              <p className="text-xs text-muted-foreground">{displayRecipes.length} 道候选菜谱</p>
+              <p className="text-xs text-muted-foreground">
+                {displayRecipes.length} {t("candidateRecipes") || "道候选菜谱"}
+              </p>
             )}
 
         {/* ── Empty state ── */}
@@ -312,7 +351,7 @@ export default function MenuOverview() {
             </div>
             <h3 className="text-base font-semibold text-foreground mb-1.5">{t("noRecipes")}</h3>
             <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
-              {selectedCategory ? `分类「${selectedCategory}」下暂无菜谱` : "还没有菜谱"}
+              {selectedCategory ? `${t("noRecipesInCategory") || "分类"}「${selectedCategory}」${t("noRecipesSuffix") || "下暂无菜谱"}` : t("noRecipesDescShort") || "还没有菜谱"}
             </p>
           </div>
             ) : viewMode === "grid" ? (
@@ -362,7 +401,7 @@ export default function MenuOverview() {
                         className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-xs text-muted-foreground hover:text-foreground transition-colors"
                       >
                         <Eye className="w-3 h-3" />
-                        预览
+                        {t("preview") || "预览"}
                       </button>
                       <button
                         onClick={(e) => handleAddToMenu(recipe, e)}
@@ -373,7 +412,7 @@ export default function MenuOverview() {
                         }`}
                       >
                         {inMenu ? <Check className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
-                        {inMenu ? "已加入" : "加入菜单"}
+                        {inMenu ? t("added") || "已加入" : t("addToMenu") || "加入菜单"}
                       </button>
                     </div>
                   </div>
@@ -477,22 +516,28 @@ export default function MenuOverview() {
           <aside className="lg:sticky lg:top-[88px] h-fit space-y-3">
             <div className="rounded-2xl border border-cyan-200/70 bg-white/90 p-3 dark:border-cyan-900/60 dark:bg-zinc-900/70">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold">已选菜单</h3>
-                <button onClick={() => navigate("/today")} className="text-xs text-cyan-700 hover:text-cyan-600">
-                  打开
-                </button>
-              </div>
-              <div className="mt-2 space-y-2 max-h-[280px] overflow-auto pr-1">
-                {menuRecipes.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">还没有加入菜谱</p>
-                ) : (
+              <h3 className="text-sm font-semibold">{t("selectedMenu") || "已选菜单"}</h3>
+              <button onClick={() => navigate("/today")} className="text-xs text-cyan-700 hover:text-cyan-600">
+                {t("open") || "打开"}
+              </button>
+            </div>
+            <div className="mt-2 space-y-2 max-h-[280px] overflow-auto pr-1">
+              {menuRecipes.length === 0 ? (
+                <p className="text-xs text-muted-foreground">{t("noMenuYet") || "还没有加入菜谱"}</p>
+              ) : (
                   menuRecipes.map(({ recipe, servings }) => (
                     <div key={recipe.id} className="rounded-xl border bg-cyan-50/40 p-2 dark:bg-zinc-800/70">
                       <p className="text-sm font-medium truncate">{recipe.title}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{servings} 人份 · {recipe.cookTime || 0} 分钟</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {servings} {t("servingsUnit") || "人份"} · {recipe.cookTime || 0} {t("min") || "分钟"}
+                      </p>
                       <div className="mt-2 flex gap-1.5">
-                        <button onClick={() => openPreview(recipe)} className="flex-1 rounded-lg border bg-white px-2 py-1 text-xs dark:bg-zinc-900/40">预览</button>
-                        <button onClick={() => removeMenuItem(recipe.id)} className="rounded-lg border px-2 py-1 text-xs text-muted-foreground">移除</button>
+                        <button onClick={() => openPreview(recipe)} className="flex-1 rounded-lg border bg-white px-2 py-1 text-xs dark:bg-zinc-900/40">
+                          {t("preview") || "预览"}
+                        </button>
+                        <button onClick={() => removeMenuItem(recipe.id)} className="rounded-lg border px-2 py-1 text-xs text-muted-foreground">
+                          {t("remove") || "移除"}
+                        </button>
                       </div>
                     </div>
                   ))
@@ -501,7 +546,7 @@ export default function MenuOverview() {
             </div>
 
             <div className="rounded-2xl border border-cyan-200/70 bg-white/90 p-3 dark:border-cyan-900/60 dark:bg-zinc-900/70">
-              <h3 className="text-sm font-semibold">执行时间线</h3>
+              <h3 className="text-sm font-semibold">{t("timeline") || "执行时间线"}</h3>
               <div className="mt-2 space-y-2">
                 {menuRecipes.slice(0, 5).map(({ recipe }, idx) => (
                   <div key={recipe.id} className="flex items-start gap-2">
@@ -514,7 +559,9 @@ export default function MenuOverview() {
                     </div>
                   </div>
                 ))}
-                {menuRecipes.length === 0 && <p className="text-xs text-muted-foreground">加入菜谱后自动生成流程</p>}
+                {menuRecipes.length === 0 && (
+                  <p className="text-xs text-muted-foreground">{t("timelineEmpty") || "加入菜谱后自动生成流程"}</p>
+                )}
               </div>
             </div>
           </aside>

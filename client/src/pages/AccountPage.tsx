@@ -32,7 +32,19 @@ export default function AccountPage() {
       const res = await fetch("/api/upload-image", { method: "POST", body: form });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        toast.error(data.error || "Upload failed");
+        const msg = data.error || "Upload failed";
+        if (typeof msg === "string" && msg.includes("Image storage is not configured")) {
+          const reader = new FileReader();
+          reader.onload = () => {
+            if (typeof reader.result === "string") {
+              setAvatarUrl(reader.result);
+              toast.success(t("usingLocalImage") || "Using local image");
+            }
+          };
+          reader.readAsDataURL(file);
+          return;
+        }
+        toast.error(msg);
         return;
       }
       const data = await res.json();

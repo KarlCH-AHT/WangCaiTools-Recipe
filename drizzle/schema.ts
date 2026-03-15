@@ -40,6 +40,7 @@ export const recipes = mysqlTable("recipes", {
   cookTime: int("cookTime"), // in minutes
   imageUrl: text("imageUrl"),
   isFavorite: int("isFavorite").default(0).notNull(), // 0 or 1 for boolean
+  rating: int("rating").default(0).notNull(),
   notes: text("notes"), // personal notes / experience
   sourceUrl: text("sourceUrl"), // original recipe source URL
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -106,5 +107,15 @@ export const dailyMenuItems = mysqlTable("dailyMenuItems", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
+export const menuShares = mysqlTable("menuShares", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  userId: int("userId").notNull(),
+  title: varchar("title", { length: 255 }),
+  itemsJson: text("itemsJson").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
 export type DailyMenuItem = typeof dailyMenuItems.$inferSelect;
 export type InsertDailyMenuItem = typeof dailyMenuItems.$inferInsert;
+export type MenuShare = typeof menuShares.$inferSelect;
+export type InsertMenuShare = typeof menuShares.$inferInsert;

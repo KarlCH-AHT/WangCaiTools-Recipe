@@ -1,0 +1,1 @@
+ALTER TABLE `recipes` ADD COLUMN `rating` int NOT NULL DEFAULT 0;

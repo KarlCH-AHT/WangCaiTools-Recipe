@@ -1,6 +1,6 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, recipes, ingredients, steps, tags, dailyMenuItems, recipeImages, InsertRecipe, Recipe, InsertIngredient, Ingredient, InsertStep, Step, InsertTag, Tag, InsertDailyMenuItem, DailyMenuItem, RecipeImage, InsertRecipeImage } from "../drizzle/schema";
+import { InsertUser, users, recipes, ingredients, steps, tags, dailyMenuItems, recipeImages, menuShares, InsertRecipe, Recipe, InsertIngredient, Ingredient, InsertStep, Step, InsertTag, Tag, InsertDailyMenuItem, DailyMenuItem, RecipeImage, InsertRecipeImage, InsertMenuShare, MenuShare } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -137,6 +137,14 @@ export async function getRecipeById(recipeId: string, _userId: number): Promise<
   ).limit(1);
   
   return result[0];
+}
+
+export async function getRecipesByIds(recipeIds: string[]): Promise<Recipe[]> {
+  const db = await getDb();
+  if (!db) return [];
+  if (recipeIds.length === 0) return [];
+  const result = await db.select().from(recipes).where(inArray(recipes.id, recipeIds));
+  return result;
 }
 
 export async function updateRecipe(recipeId: string, _userId: number, data: Partial<Omit<Recipe, 'id' | 'userId' | 'createdAt'>>): Promise<void> {
@@ -292,4 +300,20 @@ export async function clearDailyMenu(userId: number): Promise<void> {
   if (!db) throw new Error("Database not available");
   
   await db.delete(dailyMenuItems).where(eq(dailyMenuItems.userId, userId));
+}
+
+// Menu share queries
+export async function createMenuShare(userId: number, data: Omit<InsertMenuShare, "userId">): Promise<MenuShare> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(menuShares).values({ ...data, userId });
+  const created = await db.select().from(menuShares).where(eq(menuShares.id, data.id)).limit(1);
+  return created[0];
+}
+
+export async function getMenuShareById(shareId: string): Promise<MenuShare | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(menuShares).where(eq(menuShares.id, shareId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
 }

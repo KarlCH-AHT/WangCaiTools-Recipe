@@ -117,7 +117,7 @@ const changePasswordSchema = z.object({
 
 const updateProfileSchema = z.object({
   name: z.string().min(1).optional(),
-  avatarUrl: z.string().url().optional(),
+  avatarUrl: z.string().min(1).optional(),
 });
 
 export function registerAuthRoutes(app: Express) {

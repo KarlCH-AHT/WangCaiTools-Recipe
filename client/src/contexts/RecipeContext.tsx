@@ -56,6 +56,7 @@ export function RecipeProvider({ children }: { children: React.ReactNode }) {
     imageUrl: r.imageUrl ?? undefined,
     images: Array.isArray(r.images) ? r.images : undefined,
     isFavorite: r.isFavorite === 1 || r.isFavorite === true,
+    rating: r.rating ?? undefined,
     notes: r.notes ?? undefined,
     sourceUrl: r.sourceUrl ?? undefined,
     createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : (r.createdAt ?? new Date().toISOString()),
@@ -127,24 +128,26 @@ export function RecipeProvider({ children }: { children: React.ReactNode }) {
         setLoading(true);
         setError(null);
 
+        const data: Record<string, unknown> = {};
+        if (updates.title !== undefined) data.title = updates.title;
+        if (updates.description !== undefined) data.description = updates.description;
+        if (updates.category !== undefined) data.category = updates.category;
+        if (updates.servings !== undefined) data.servings = updates.servings;
+        if (updates.prepTime !== undefined) data.prepTime = updates.prepTime;
+        if (updates.cookTime !== undefined) data.cookTime = updates.cookTime;
+        if (updates.imageUrl !== undefined) data.imageUrl = updates.imageUrl;
+        if (updates.images !== undefined) data.images = updates.images;
+        if (updates.isFavorite !== undefined) data.isFavorite = updates.isFavorite ? 1 : 0;
+        if (updates.rating !== undefined) data.rating = updates.rating;
+        if (updates.ingredients !== undefined) data.ingredients = updates.ingredients;
+        if (updates.steps !== undefined) data.steps = updates.steps;
+        if (updates.tags !== undefined) data.tags = updates.tags;
+        if (updates.notes !== undefined) data.notes = updates.notes;
+        if (updates.sourceUrl !== undefined) data.sourceUrl = updates.sourceUrl;
+
         await updateRecipeMutation.mutateAsync({
           id,
-          data: {
-            title: updates.title || "",
-            description: updates.description,
-            category: updates.category,
-            servings: updates.servings,
-            prepTime: updates.prepTime,
-            cookTime: updates.cookTime,
-            imageUrl: updates.imageUrl,
-            images: updates.images,
-            isFavorite: updates.isFavorite ? 1 : 0,
-            ingredients: updates.ingredients,
-            steps: updates.steps,
-            tags: updates.tags,
-            notes: updates.notes,
-            sourceUrl: updates.sourceUrl,
-          },
+          data,
         });
 
         await refetchRecipes();

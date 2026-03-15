@@ -71,9 +71,12 @@ const RecipeInputSchema = z.object({
   imageUrl: z.string().optional(),
   images: z.array(z.string()).optional(), // array of base64 or URLs
   isFavorite: z.number().int().optional(),
+  rating: z.number().int().min(0).max(5).optional(),
   notes: z.string().optional(),
   sourceUrl: z.string().optional(),
 });
+
+const RecipeUpdateSchema = RecipeInputSchema.partial();
 
 const IngredientInputSchema = z.object({
   name: z.string().min(1),
@@ -230,7 +233,7 @@ export const recipesRouter = router({
     .input(
       z.object({
         id: z.string(),
-        data: RecipeInputSchema.extend({
+        data: RecipeUpdateSchema.extend({
           ingredients: z.array(IngredientInputSchema).optional(),
           steps: z.array(StepInputSchema).optional(),
           tags: z.array(z.string()).optional(),
