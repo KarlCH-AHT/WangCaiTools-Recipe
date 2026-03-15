@@ -1,4 +1,4 @@
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, recipes, ingredients, steps, tags, dailyMenuItems, recipeImages, menuShares, InsertRecipe, Recipe, InsertIngredient, Ingredient, InsertStep, Step, InsertTag, Tag, InsertDailyMenuItem, DailyMenuItem, RecipeImage, InsertRecipeImage, InsertMenuShare, MenuShare } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -99,6 +99,12 @@ export async function getUserByEmail(email: string) {
   if (!db) return undefined;
   const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
   return result.length > 0 ? result[0] : undefined;
+}
+
+export async function listUsers() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(users).orderBy(desc(users.createdAt));
 }
 
 // TODO: add feature queries here as your schema grows.

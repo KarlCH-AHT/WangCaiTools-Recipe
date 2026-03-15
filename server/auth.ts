@@ -293,6 +293,49 @@ export function registerAuthRoutes(app: Express) {
     }
   });
 
+  // List all accounts in this recipe space (authenticated, sanitized fields only)
+  app.get("/api/auth/users", async (req: Request, res: Response) => {
+    try {
+      const authUser = await authenticateRequest(req);
+      if (!authUser) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      if (isDevNoDbMode()) {
+        const users = Array.from(devUsersByOpenId.values()).map((u) => ({
+          id: u.id,
+          openId: u.openId,
+          name: u.name ?? null,
+          email: u.email ?? null,
+          avatarUrl: (u as any).avatarUrl ?? null,
+          role: u.role,
+          lastSignedIn: u.lastSignedIn,
+          createdAt: u.createdAt,
+        }));
+        res.json({ users });
+        return;
+      }
+
+      const users = await db.listUsers();
+      res.json({
+        users: users.map((u) => ({
+          id: u.id,
+          openId: u.openId,
+          name: u.name,
+          email: u.email,
+          avatarUrl: u.avatarUrl,
+          role: u.role,
+          lastSignedIn: u.lastSignedIn,
+          createdAt: u.createdAt,
+        })),
+      });
+    } catch (err) {
+      console.error("[Auth] List users error:", err);
+      res.status(500).json({ error: "Failed to load users" });
+    }
+  });
+
   // Change password (must be logged in)
   app.post("/api/auth/change-password", async (req: Request, res: Response) => {
     const parsed = changePasswordSchema.safeParse(req.body);
