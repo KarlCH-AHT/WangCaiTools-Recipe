@@ -11,7 +11,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, Link, Loader2 } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
-import { useRecipes } from "@/contexts/RecipeContext";
+import { useRecipes } from "@/features/recipes";
 import { trpc } from "@/lib/trpc";
 import { importRecipesFromJSON, importRecipesFromCSV } from "@/lib/recipeImport";
 import { toast } from "sonner";

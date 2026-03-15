@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { recipesRouter } from "./recipes";
+import { recipesRouter } from "../features/recipes/router";
 import * as db from "../db";
 
 // Mock database functions

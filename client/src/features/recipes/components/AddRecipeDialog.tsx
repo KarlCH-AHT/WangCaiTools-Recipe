@@ -3,15 +3,14 @@ import {
   Dialog,
   DialogContent,
 } from "@/components/ui/dialog";
-import { useRecipes, getAllTags } from "@/contexts/RecipeContext";
+import { useRecipes, getAllTags } from "@/features/recipes";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Recipe } from "@/types/recipe";
 import { ChevronLeft, ChevronRight, ImagePlus, Loader2, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { ingredientsToText, parseIngredientsText, parseStepsText, sanitizeLegacyNoteText, stepsToText } from "@/utils/recipeLineEditors";
 
-interface EditRecipeDialogProps {
-  recipe: Recipe;
+interface AddRecipeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -56,32 +55,27 @@ function PlainEditorDialog({
   );
 }
 
-export default function EditRecipeDialog({ recipe, open, onOpenChange }: EditRecipeDialogProps) {
-  const { updateRecipe, recipes } = useRecipes();
+export default function AddRecipeDialog({ open, onOpenChange }: AddRecipeDialogProps) {
+  const { addRecipe, recipes } = useRecipes();
   const t = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [title, setTitle] = useState(recipe.title);
-  const [category, setCategory] = useState(recipe.category || "");
-  const [tags, setTags] = useState<string[]>(recipe.tags || []);
+  const [title, setTitle] = useState("");
+  const [category, setCategory] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
-  const [servings, setServings] = useState(String(recipe.servings));
-  const [prepTime, setPrepTime] = useState(String(recipe.prepTime || ""));
-  const [cookTime, setCookTime] = useState(String(recipe.cookTime || ""));
-
-  const [images, setImages] = useState<string[]>(() => {
-    if (recipe.images && recipe.images.length > 0) return recipe.images;
-    if (recipe.imageUrl) return [recipe.imageUrl];
-    return [];
-  });
+  const [servings, setServings] = useState("4");
+  const [prepTime, setPrepTime] = useState("");
+  const [cookTime, setCookTime] = useState("");
+  const [images, setImages] = useState<string[]>([]);
   const [blobFileMap, setBlobFileMap] = useState<Map<string, File>>(new Map());
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
 
-  const [ingredientsText, setIngredientsText] = useState(ingredientsToText(recipe.ingredients || []));
-  const [stepsText, setStepsText] = useState(stepsToText(recipe.steps || []));
-  const [notesText, setNotesText] = useState(sanitizeLegacyNoteText(recipe.notes || ""));
-  const [sourceUrl, setSourceUrl] = useState(recipe.sourceUrl || "");
+  const [ingredientsText, setIngredientsText] = useState("");
+  const [stepsText, setStepsText] = useState("");
+  const [notesText, setNotesText] = useState("");
+  const [sourceUrl, setSourceUrl] = useState("");
 
   const [ingredientsOpen, setIngredientsOpen] = useState(false);
   const [stepsOpen, setStepsOpen] = useState(false);
@@ -100,27 +94,37 @@ export default function EditRecipeDialog({ recipe, open, onOpenChange }: EditRec
 
   useEffect(() => {
     if (!open) return;
-    setTitle(recipe.title);
-    setCategory(recipe.category || "");
-    setTags(recipe.tags || []);
-    setTagInput("");
-    setServings(String(recipe.servings));
-    setPrepTime(String(recipe.prepTime || ""));
-    setCookTime(String(recipe.cookTime || ""));
-    setIngredientsText(ingredientsToText(recipe.ingredients || []));
-    setStepsText(stepsToText(recipe.steps || []));
-    setNotesText(sanitizeLegacyNoteText(recipe.notes || ""));
-    setSourceUrl(recipe.sourceUrl || "");
-    const initImages = recipe.images && recipe.images.length > 0 ? recipe.images : recipe.imageUrl ? [recipe.imageUrl] : [];
-    setImages(initImages);
-    setBlobFileMap(new Map());
-    setCurrentImageIndex(0);
-  }, [open, recipe]);
+    const generatedRecipe = sessionStorage.getItem("generatedRecipe");
+    if (!generatedRecipe) return;
+    try {
+      const recipe = JSON.parse(generatedRecipe);
+      setTitle(recipe.title || "");
+      setCategory(recipe.category || "");
+      setServings(String(recipe.servings || 4));
+      setPrepTime(String(recipe.prepTime || ""));
+      setCookTime(String(recipe.cookTime || ""));
+      setTags([]);
+      setIngredientsText(ingredientsToText(recipe.ingredients || []));
+      setStepsText(stepsToText(recipe.steps || []));
+      setNotesText(sanitizeLegacyNoteText(recipe.notes || ""));
+      setSourceUrl(recipe.sourceUrl || "");
+      if (recipe.imageUrl) {
+        setImages([recipe.imageUrl]);
+        setCurrentImageIndex(0);
+      } else if (recipe.images?.length > 0) {
+        setImages(recipe.images);
+        setCurrentImageIndex(0);
+      }
+      sessionStorage.removeItem("generatedRecipe");
+    } catch {
+      // ignore parse error
+    }
+  }, [open]);
 
   const uploadImageFile = async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append("file", file);
-    const response = await fetch("/api/upload-image", { method: "POST", credentials: "include", body: formData });
+    const response = await fetch("/api/upload-image", { method: "POST", body: formData, credentials: "include" });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
       throw new Error((err as any).error || "Upload failed");
@@ -199,25 +203,27 @@ export default function EditRecipeDialog({ recipe, open, onOpenChange }: EditRec
         setIsUploadingImages(false);
       }
 
-      await updateRecipe(recipe.id, {
+      const newRecipe: Omit<Recipe, "id" | "createdAt" | "updatedAt"> = {
         title: title.trim(),
         category: category.trim() || undefined,
-        tags,
-        imageUrl: finalImages[0] || undefined,
-        images: finalImages.length > 0 ? finalImages : undefined,
+        tags: tags.length > 0 ? tags : undefined,
         servings: parseInt(servings) || 4,
-        prepTime: prepTime ? parseInt(prepTime) : undefined,
-        cookTime: cookTime ? parseInt(cookTime) : undefined,
+        prepTime: parseInt(prepTime) || undefined,
+        cookTime: parseInt(cookTime) || undefined,
         ingredients: parsedIngredients,
         steps: parsedSteps,
         notes: notesText.trim() || undefined,
         sourceUrl: sourceUrl.trim() || undefined,
-        updatedAt: new Date().toISOString(),
-      });
-      toast.success(t("recipeUpdated") || "Rezept aktualisiert!");
+        imageUrl: finalImages[0] || undefined,
+        images: finalImages.length > 0 ? finalImages : undefined,
+        isFavorite: false,
+      };
+
+      await addRecipe(newRecipe);
+      toast.success(t("recipeCreated"));
       onOpenChange(false);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Fehler beim Speichern");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t("errorCreatingRecipe"));
     } finally {
       setIsSubmitting(false);
       setIsUploadingImages(false);
@@ -230,7 +236,7 @@ export default function EditRecipeDialog({ recipe, open, onOpenChange }: EditRec
         <DialogContent className="max-w-xl rounded-3xl p-0" showCloseButton={false}>
           <div className="flex items-center justify-between border-b px-5 py-4">
             <button onClick={() => onOpenChange(false)} className="text-sm font-medium text-primary">{t("cancel")}</button>
-            <h2 className="text-base font-semibold">{t("editRecipe")}</h2>
+            <h2 className="text-base font-semibold">{t("createNewRecipe")}</h2>
             <button
               onClick={handleSubmit}
               disabled={isSubmitting}
@@ -238,18 +244,31 @@ export default function EditRecipeDialog({ recipe, open, onOpenChange }: EditRec
             >
               {isSubmitting ? (
                 <span className="inline-flex items-center gap-1"><Loader2 className="h-3.5 w-3.5 animate-spin" />{isUploadingImages ? t("uploading") : t("saving")}</span>
-              ) : t("saveChanges")}
+              ) : t("createRecipe")}
             </button>
           </div>
 
           <div className="max-h-[80vh] space-y-4 overflow-y-auto px-4 py-4">
             <div className="rounded-2xl border bg-white p-3 dark:bg-zinc-900">
-              <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("recipeNamePlaceholder")} className="w-full bg-transparent text-base font-medium outline-none" />
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder={t("recipeNamePlaceholder")}
+                className="w-full bg-transparent text-base font-medium outline-none"
+              />
             </div>
 
             <div className="rounded-2xl border bg-white p-3 dark:bg-zinc-900 space-y-3">
-              <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder={t("newCategory") || "分类"} list="simple-edit-category-suggestions" className="w-full rounded-xl border bg-zinc-50 px-3 py-2 text-sm" />
-              <datalist id="simple-edit-category-suggestions">{existingCategories.map((cat) => <option key={cat} value={cat} />)}</datalist>
+              <input
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                placeholder={t("newCategory") || "分类"}
+                list="simple-category-suggestions"
+                className="w-full rounded-xl border bg-zinc-50 px-3 py-2 text-sm outline-none"
+              />
+              <datalist id="simple-category-suggestions">
+                {existingCategories.map((cat) => <option key={cat} value={cat} />)}
+              </datalist>
               <div className="grid grid-cols-3 gap-2">
                 <input type="number" min="1" value={servings} onChange={(e) => setServings(e.target.value)} placeholder={t("portions")} className="rounded-xl border bg-zinc-50 px-3 py-2 text-sm" />
                 <input type="number" min="0" value={prepTime} onChange={(e) => setPrepTime(e.target.value)} placeholder={t("prepTime")} className="rounded-xl border bg-zinc-50 px-3 py-2 text-sm" />
@@ -259,9 +278,27 @@ export default function EditRecipeDialog({ recipe, open, onOpenChange }: EditRec
 
             <div className="rounded-2xl border bg-white p-3 dark:bg-zinc-900">
               <SectionTitle>{t("tags")}</SectionTitle>
-              <div className="mt-2 flex flex-wrap gap-1.5">{tags.map((tag) => <span key={tag} className="flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs text-primary">{tag}<button onClick={() => setTags(tags.filter((t) => t !== tag))}><X className="h-3 w-3" /></button></span>)}</div>
-              <div className="mt-2 flex items-center gap-2"><input value={tagInput} onChange={(e) => setTagInput(e.target.value)} className="flex-1 rounded-xl border bg-zinc-50 px-3 py-2 text-sm" placeholder={t("addTag")} /><button onClick={handleAddTag} className="rounded-xl border px-3 py-2 text-sm"><Plus className="h-4 w-4" /></button></div>
-              {existingTags.length > 0 ? <div className="mt-2 flex flex-wrap gap-1.5">{existingTags.slice(0, 12).map((tag) => <button key={tag} onClick={() => !tags.includes(tag) && setTags([...tags, tag])} className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs">{tag}</button>)}</div> : null}
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {tags.map((tag) => (
+                  <span key={tag} className="flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs text-primary">
+                    {tag}
+                    <button onClick={() => setTags(tags.filter((t) => t !== tag))}><X className="h-3 w-3" /></button>
+                  </span>
+                ))}
+              </div>
+              <div className="mt-2 flex items-center gap-2">
+                <input value={tagInput} onChange={(e) => setTagInput(e.target.value)} className="flex-1 rounded-xl border bg-zinc-50 px-3 py-2 text-sm" placeholder={t("addTag")} />
+                <button onClick={handleAddTag} className="rounded-xl border px-3 py-2 text-sm">+ </button>
+              </div>
+              {existingTags.length > 0 ? (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {existingTags.slice(0, 12).map((tag) => (
+                    <button key={tag} onClick={() => !tags.includes(tag) && setTags([...tags, tag])} className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs">
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
             </div>
 
             <div className="rounded-2xl border bg-white p-3 dark:bg-zinc-900 space-y-2">
@@ -272,13 +309,32 @@ export default function EditRecipeDialog({ recipe, open, onOpenChange }: EditRec
 
             <div className="rounded-2xl border bg-white p-3 dark:bg-zinc-900 space-y-2">
               <SectionTitle>{t("addImages")}</SectionTitle>
-              {images.length > 0 ? <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: "16/9" }}><img src={images[currentImageIndex]} alt="Preview" className="h-full w-full object-cover" />{images.length > 1 ? <><button onClick={() => setCurrentImageIndex((i) => (i - 1 + images.length) % images.length)} className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/40 p-1.5 text-white"><ChevronLeft className="h-4 w-4" /></button><button onClick={() => setCurrentImageIndex((i) => (i + 1) % images.length)} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/40 p-1.5 text-white"><ChevronRight className="h-4 w-4" /></button></> : null}<button onClick={() => handleRemoveImage(currentImageIndex)} className="absolute right-2 top-2 rounded-full bg-black/40 p-1 text-white"><X className="h-3.5 w-3.5" /></button></div> : null}
-              <button onClick={() => fileInputRef.current?.click()} className="w-full rounded-xl border px-3 py-2 text-sm"><span className="inline-flex items-center gap-2"><ImagePlus className="h-4 w-4" /> {images.length > 0 ? `${images.length} ${t("imageCount")}` : t("addImagesHint")}</span></button>
+              {images.length > 0 ? (
+                <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: "16/9" }}>
+                  <img src={images[currentImageIndex]} alt="Preview" className="h-full w-full object-cover" />
+                  {images.length > 1 ? (
+                    <>
+                      <button onClick={() => setCurrentImageIndex((i) => (i - 1 + images.length) % images.length)} className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/40 p-1.5 text-white"><ChevronLeft className="h-4 w-4" /></button>
+                      <button onClick={() => setCurrentImageIndex((i) => (i + 1) % images.length)} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/40 p-1.5 text-white"><ChevronRight className="h-4 w-4" /></button>
+                    </>
+                  ) : null}
+                  <button onClick={() => handleRemoveImage(currentImageIndex)} className="absolute right-2 top-2 rounded-full bg-black/40 p-1 text-white"><X className="h-3.5 w-3.5" /></button>
+                </div>
+              ) : null}
+              <button onClick={() => fileInputRef.current?.click()} className="w-full rounded-xl border px-3 py-2 text-sm">
+                <span className="inline-flex items-center gap-2"><ImagePlus className="h-4 w-4" /> {images.length > 0 ? `${images.length} ${t("imageCount")}` : t("addImagesHint")}</span>
+              </button>
               <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => handleFilesSelected(e.target.files)} />
             </div>
 
             <div className="rounded-2xl border bg-white p-3 dark:bg-zinc-900">
-              <input type="url" value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} placeholder={t("sourceUrlPlaceholder")} className="w-full rounded-xl border bg-zinc-50 px-3 py-2 text-sm" />
+              <input
+                type="url"
+                value={sourceUrl}
+                onChange={(e) => setSourceUrl(e.target.value)}
+                placeholder={t("sourceUrlPlaceholder")}
+                className="w-full rounded-xl border bg-zinc-50 px-3 py-2 text-sm"
+              />
             </div>
           </div>
         </DialogContent>

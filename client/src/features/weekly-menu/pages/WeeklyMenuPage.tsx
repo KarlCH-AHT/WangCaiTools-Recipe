@@ -1,13 +1,14 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Trash2, CalendarDays, ShoppingBasket, ChevronRight, Check } from "lucide-react";
-import { useWeeklyMenu } from "@/contexts/WeeklyMenuContext";
-import { useRecipes } from "@/contexts/RecipeContext";
+import { useWeeklyMenu } from "@/features/weekly-menu";
+import { useRecipes } from "@/features/recipes";
 import { useTranslation, useFormatUnit } from "@/hooks/useTranslation";
 import { nanoid } from "nanoid";
 import { WeeklyMenu } from "@/types/recipe";
+import { formatLocalDate } from "@/lib/date";
 
 const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
 const DAY_LABELS: Record<string, string> = {
@@ -29,14 +30,16 @@ export default function WeeklyMenuPage() {
   const [selectedMenuId, setSelectedMenuId] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState<string>("monday");
   const [selectedRecipeId, setSelectedRecipeId] = useState<string>("");
+  const [draftTitle, setDraftTitle] = useState("");
 
   const createNewWeeklyMenu = async () => {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - startDate.getDay() + 1);
+    const localStartDate = formatLocalDate(startDate);
     const menu: WeeklyMenu = {
       id: nanoid(),
-      title: `${t("weeklyMenu") || "Weekly Menu"} ${startDate.toISOString().slice(0, 10)}`,
-      startDate: startDate.toISOString().split("T")[0],
+      title: `${t("weeklyMenu") || "Weekly Menu"} ${localStartDate}`,
+      startDate: localStartDate,
       items: {},
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -47,6 +50,12 @@ export default function WeeklyMenuPage() {
   const selectedMenu = selectedMenuId ? weeklyMenus.find((m) => m.id === selectedMenuId) : weeklyMenus[0] || null;
   const effectiveMenuId = selectedMenu?.id ?? null;
   const shoppingList = effectiveMenuId ? generateShoppingList(effectiveMenuId) : [];
+
+  useEffect(() => {
+    if (selectedMenu) {
+      setDraftTitle(selectedMenu.title || "");
+    }
+  }, [selectedMenu]);
 
   const recipesInSelectedDay = useMemo(() => {
     if (!selectedMenu) return [];
@@ -77,14 +86,22 @@ export default function WeeklyMenuPage() {
     if (!selectedMenu) return;
     const nextWeek = new Date(selectedMenu.startDate);
     nextWeek.setDate(nextWeek.getDate() + 7);
+    const nextWeekDate = formatLocalDate(nextWeek);
     await addWeeklyMenu({
       ...selectedMenu,
       id: nanoid(),
       title: `${selectedMenu.title || t("weeklyMenu") || "Weekly Menu"} copy`,
-      startDate: nextWeek.toISOString().split("T")[0],
+      startDate: nextWeekDate,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
+  };
+
+  const handleSaveMenuTitle = async () => {
+    if (!selectedMenu) return;
+    const nextTitle = draftTitle.trim() || `${t("weeklyMenu") || "Weekly Menu"} ${selectedMenu.startDate}`;
+    if (nextTitle === (selectedMenu.title || "")) return;
+    await updateWeeklyMenu(selectedMenu.id, { title: nextTitle });
   };
 
   return (
@@ -165,7 +182,12 @@ export default function WeeklyMenuPage() {
                 <div className="rounded-3xl border border-cyan-200/70 bg-white/90 p-4 shadow-sm">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                     <div>
-                      <h2 className="text-xl font-semibold text-foreground">{selectedMenu.title || selectedMenu.startDate}</h2>
+                      <input
+                        value={draftTitle}
+                        onChange={(e) => setDraftTitle(e.target.value)}
+                        className="w-full rounded-xl border border-transparent bg-transparent px-0 text-xl font-semibold text-foreground outline-none focus:border-cyan-200 focus:bg-cyan-50/40"
+                        placeholder={selectedMenu.startDate}
+                      />
                       <p className="mt-1 text-sm text-muted-foreground">
                         {t("menuWorkbenchDesc") || "Planning view for your weekly family meals"}
                       </p>
@@ -176,11 +198,8 @@ export default function WeeklyMenuPage() {
                       </Button>
                       <Button
                         variant="outline"
-                        onClick={async () => {
-                          await updateWeeklyMenu(selectedMenu.id, {
-                            title: `${selectedMenu.title || selectedMenu.startDate} ${t("updatedAt") || "updated"}`,
-                          });
-                        }}
+                        onClick={handleSaveMenuTitle}
+                        disabled={(draftTitle.trim() || "") === (selectedMenu.title || "")}
                       >
                         {t("saveChanges") || "Save changes"}
                       </Button>

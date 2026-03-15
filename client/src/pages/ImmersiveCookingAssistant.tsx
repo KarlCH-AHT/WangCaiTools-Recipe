@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Check, ListChecks, ScrollText } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
 import { toast } from "sonner";
-import { useRecipes } from "@/contexts/RecipeContext";
+import { useRecipes } from "@/features/recipes";
 
 type ParsedIngredient = {
   id: string;

@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { invokeLLM } from "../_core/llm";
+import { invokeLLM } from "../../_core/llm";
 // generateImage import removed - now using Unsplash web search instead
-import { storagePut } from "../storage";
-import { protectedProcedure, router } from "../_core/trpc";
+import { storagePut } from "../../storage";
+import { protectedProcedure, router } from "../../_core/trpc";
 import { TRPCError } from "@trpc/server";
 import {
   createRecipe,
@@ -35,9 +35,10 @@ import {
   updateDailyMenuItemServings,
   createWeeklyMenu,
   getWeeklyMenusByUserId,
+  getWeeklyMenuById,
   updateWeeklyMenuById,
   deleteWeeklyMenuById,
-} from "../db";
+} from "../../db";
 import { nanoid } from "nanoid";
 
 // Wikipedia image helpers
@@ -516,6 +517,53 @@ export const recipesRouter = router({
       return { success: true };
     }),
 
+  addWeeklyMenuItem: protectedProcedure
+    .input(z.object({
+      menuId: z.string(),
+      day: z.string(),
+      item: WeeklyMenuItemSchema,
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const menu = await getWeeklyMenuById(input.menuId, ctx.user.id);
+      if (!menu) throw new TRPCError({ code: "NOT_FOUND", message: "Weekly menu not found" });
+
+      const items = JSON.parse(menu.itemsJson || "{}") as Record<string, Array<{ recipeId: string; servings: number }>>;
+      const dayItems = items[input.day] || [];
+      const nextItems = {
+        ...items,
+        [input.day]: [...dayItems.filter((entry) => entry.recipeId !== input.item.recipeId), input.item],
+      };
+
+      await updateWeeklyMenuById(input.menuId, ctx.user.id, {
+        itemsJson: JSON.stringify(nextItems),
+      });
+
+      return { success: true };
+    }),
+
+  removeWeeklyMenuItem: protectedProcedure
+    .input(z.object({
+      menuId: z.string(),
+      day: z.string(),
+      recipeId: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const menu = await getWeeklyMenuById(input.menuId, ctx.user.id);
+      if (!menu) return { success: true };
+
+      const items = JSON.parse(menu.itemsJson || "{}") as Record<string, Array<{ recipeId: string; servings: number }>>;
+      const nextItems = {
+        ...items,
+        [input.day]: (items[input.day] || []).filter((entry) => entry.recipeId !== input.recipeId),
+      };
+
+      await updateWeeklyMenuById(input.menuId, ctx.user.id, {
+        itemsJson: JSON.stringify(nextItems),
+      });
+
+      return { success: true };
+    }),
+
   deleteWeeklyMenu: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -524,7 +572,7 @@ export const recipesRouter = router({
     }),
 
   initializeSampleRecipes: protectedProcedure.mutation(async ({ ctx }) => {
-    const { sampleRecipes } = await import("../sampleRecipes");
+    const { sampleRecipes } = await import("../../sampleRecipes");
     const createdRecipes = [];
     
     for (const sample of sampleRecipes) {

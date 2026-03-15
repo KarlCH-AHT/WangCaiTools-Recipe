@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useCallback, useMemo } from "react";
 import { WeeklyMenu, DailyMenuItem, ShoppingListItem } from "@/types/recipe";
-import { useRecipes } from "./RecipeContext";
+import { useRecipes } from "@/features/recipes";
 import { trpc } from "@/lib/trpc";
 
 interface WeeklyMenuContextType {
@@ -25,6 +25,8 @@ export function WeeklyMenuProvider({ children }: { children: React.ReactNode }) 
   const createWeeklyMenuMutation = trpc.recipes.createWeeklyMenu.useMutation();
   const updateWeeklyMenuMutation = trpc.recipes.updateWeeklyMenu.useMutation();
   const deleteWeeklyMenuMutation = trpc.recipes.deleteWeeklyMenu.useMutation();
+  const addWeeklyMenuItemMutation = trpc.recipes.addWeeklyMenuItem.useMutation();
+  const removeWeeklyMenuItemMutation = trpc.recipes.removeWeeklyMenuItem.useMutation();
 
   const weeklyMenus = useMemo<WeeklyMenu[]>(() => {
     return (data ?? []).map((menu: any) => ({
@@ -68,27 +70,22 @@ export function WeeklyMenuProvider({ children }: { children: React.ReactNode }) 
   const getWeeklyMenu = useCallback((id: string) => weeklyMenus.find((menu) => menu.id === id), [weeklyMenus]);
 
   const addMenuItemToDay = useCallback(async (menuId: string, day: string, item: DailyMenuItem) => {
-    const menu = weeklyMenus.find((entry) => entry.id === menuId);
-    if (!menu) return;
-    const dayItems = menu.items[day] || [];
-    await updateWeeklyMenu(menuId, {
-      items: {
-        ...menu.items,
-        [day]: [...dayItems.filter((existing) => existing.recipeId !== item.recipeId), item],
-      },
+    await addWeeklyMenuItemMutation.mutateAsync({
+      menuId,
+      day,
+      item,
     });
-  }, [updateWeeklyMenu, weeklyMenus]);
+    await invalidate();
+  }, [addWeeklyMenuItemMutation, invalidate]);
 
   const removeMenuItemFromDay = useCallback(async (menuId: string, day: string, recipeId: string) => {
-    const menu = weeklyMenus.find((entry) => entry.id === menuId);
-    if (!menu) return;
-    await updateWeeklyMenu(menuId, {
-      items: {
-        ...menu.items,
-        [day]: (menu.items[day] || []).filter((item) => item.recipeId !== recipeId),
-      },
+    await removeWeeklyMenuItemMutation.mutateAsync({
+      menuId,
+      day,
+      recipeId,
     });
-  }, [updateWeeklyMenu, weeklyMenus]);
+    await invalidate();
+  }, [invalidate, removeWeeklyMenuItemMutation]);
 
   const generateShoppingList = useCallback((menuId: string): ShoppingListItem[] => {
     const menu = getWeeklyMenu(menuId);

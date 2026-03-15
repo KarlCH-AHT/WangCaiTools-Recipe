@@ -1,13 +1,11 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Plus, Clock, Users, Search, X, Heart, Grid3x3, List, Grid2x2, Sparkles, UtensilsCrossed, Upload, ChevronDown, Check, Moon, Sun, CalendarDays, ShoppingBasket, Share2, ArrowRight } from "lucide-react";
-import { useRecipes } from "@/contexts/RecipeContext";
+import { useRecipes } from "@/features/recipes";
 import { useTranslation } from "@/hooks/useTranslation";
-import AddRecipeDialog from "@/components/AddRecipeDialog";
+import { AddRecipeDialog, AIGenerateRecipeDialog, ImportRecipeDialog } from "@/features/recipes";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { languages } from "@/lib/i18n";
-import ImportRecipeDialog from "@/components/ImportRecipeDialog";
-import AIGenerateRecipeDialog from "@/components/AIGenerateRecipeDialog";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { useTheme } from "@/contexts/ThemeContext";

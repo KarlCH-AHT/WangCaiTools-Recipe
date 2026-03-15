@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useMemo, useCallback } from "react";
 import { DailyMenu } from "@/types/recipe";
 import { trpc } from "@/lib/trpc";
+import { formatLocalDate } from "@/lib/date";
 
 interface DailyMenuContextType {
   dailyMenu: DailyMenu;
@@ -14,8 +15,7 @@ interface DailyMenuContextType {
 const DailyMenuContext = createContext<DailyMenuContextType | undefined>(undefined);
 
 function getTodayDateString(): string {
-  const today = new Date();
-  return today.toISOString().split("T")[0];
+  return formatLocalDate(new Date());
 }
 
 export function DailyMenuProvider({ children }: { children: React.ReactNode }) {

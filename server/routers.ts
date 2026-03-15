@@ -1,6 +1,6 @@
 import { COOKIE_NAME } from "@shared/const";
 import { publicProcedure, router } from "./_core/trpc";
-import { recipesRouter } from "./routers/recipes";
+import { recipesRouter } from "./features/recipes";
 
 export const appRouter = router({
   auth: router({

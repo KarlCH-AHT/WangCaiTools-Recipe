@@ -2,6 +2,17 @@ import { describe, it, expect, vi } from "vitest";
 import { appRouter } from "../routers";
 import type { TrpcContext } from "../_core/context";
 
+vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+  ok: false,
+  json: async () => ({}),
+  text: async () => "",
+  arrayBuffer: async () => new ArrayBuffer(0),
+  headers: {
+    get: () => null,
+  },
+}));
+vi.spyOn(console, "warn").mockImplementation(() => {});
+
 // Mock the image generation API to avoid timeout in tests
 vi.mock("../_core/imageGeneration", () => ({
   generateImage: vi.fn().mockResolvedValue({

@@ -51,6 +51,7 @@ export default function ShareMenuPage() {
   const [items, setItems] = useState<ShareItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [collaboration, setCollaboration] = useState<CollaborationState>(DEFAULT_COLLABORATION_STATE);
+  const [hasLoadedRemoteState, setHasLoadedRemoteState] = useState(false);
   const shareId = params?.id;
 
   useEffect(() => {
@@ -58,6 +59,7 @@ export default function ShareMenuPage() {
       try {
         setLoading(true);
         setError(null);
+        setHasLoadedRemoteState(false);
         const res = await fetch(`/api/share-menu/${shareId}`);
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
@@ -71,6 +73,7 @@ export default function ShareMenuPage() {
           ...DEFAULT_COLLABORATION_STATE,
           ...(data?.share?.metadata ?? {}),
         });
+        setHasLoadedRemoteState(true);
       } catch {
         setError(t("networkError") || "Network error, please try again");
       } finally {
@@ -82,7 +85,7 @@ export default function ShareMenuPage() {
   }, [shareId, t]);
 
   useEffect(() => {
-    if (!shareId) return;
+    if (!shareId || !hasLoadedRemoteState) return;
     const controller = new AbortController();
     const timeout = setTimeout(() => {
       fetch(`/api/share-menu/${shareId}/collaboration`, {
@@ -99,7 +102,8 @@ export default function ShareMenuPage() {
       controller.abort();
       clearTimeout(timeout);
     };
-  }, [collaboration, shareId]);
+  }, [collaboration, hasLoadedRemoteState, shareId]);
+  
 
   const totals = useMemo(() => {
     const totalCookTime = items.reduce((sum, item) => sum + (item.recipe.cookTime || 0), 0);
@@ -137,6 +141,29 @@ export default function ShareMenuPage() {
 
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [items]);
+
+  useEffect(() => {
+    const validIngredientKeys = new Set(combinedIngredients.map((item) => item.key));
+    const validRecipeIds = new Set(items.map((item) => item.recipe.id));
+
+    setCollaboration((prev) => {
+      const nextCheckedIngredients = prev.checkedIngredients.filter((key) => validIngredientKeys.has(key));
+      const nextReadyRecipeIds = prev.readyRecipeIds.filter((id) => validRecipeIds.has(id));
+
+      if (
+        nextCheckedIngredients.length === prev.checkedIngredients.length &&
+        nextReadyRecipeIds.length === prev.readyRecipeIds.length
+      ) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        checkedIngredients: nextCheckedIngredients,
+        readyRecipeIds: nextReadyRecipeIds,
+      };
+    });
+  }, [combinedIngredients, items]);
 
   const checkedIngredientSet = useMemo(() => new Set(collaboration.checkedIngredients), [collaboration.checkedIngredients]);
   const readyRecipeSet = useMemo(() => new Set(collaboration.readyRecipeIds), [collaboration.readyRecipeIds]);

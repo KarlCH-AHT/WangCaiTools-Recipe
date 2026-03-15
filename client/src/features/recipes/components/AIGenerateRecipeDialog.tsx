@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Sparkles } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 
 export interface GeneratedRecipeData {
   title: string;
@@ -62,13 +63,13 @@ export default function AIGenerateRecipeDialog({
       const message =
         error.message ||
         (t("failedToGenerateRecipe") || "Failed to generate recipe");
-      alert(message);
+      toast.error(message);
     },
   });
 
   const handleGenerate = async () => {
     if (!dishName.trim()) {
-      alert(t("pleaseEnterDishName") || "Please enter a dish name");
+      toast.error(t("pleaseEnterDishName") || "Please enter a dish name");
       return;
     }
 

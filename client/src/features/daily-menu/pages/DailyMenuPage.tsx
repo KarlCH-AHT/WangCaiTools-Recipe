@@ -1,8 +1,8 @@
 import { useState, useMemo, useCallback } from "react";
 import { useLocation } from "wouter";
 import { ArrowLeft, Trash2, ChevronUp, ChevronDown, ShoppingCart, Clock, ChefHat, Share2, Check } from "lucide-react";
-import { useRecipes } from "@/contexts/RecipeContext";
-import { useDailyMenu } from "@/contexts/DailyMenuContext";
+import { useRecipes } from "@/features/recipes";
+import { useDailyMenu } from "@/features/daily-menu";
 import { useTranslation, useFormatUnit } from "@/hooks/useTranslation";
 
 /**

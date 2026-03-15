@@ -1,13 +1,13 @@
 import { useState, useMemo, useEffect } from "react";
 import { useLocation, useRoute } from "wouter";
-import { useRecipes } from "@/contexts/RecipeContext";
+import { useRecipes } from "@/features/recipes";
 import { useTranslation, useFormatUnit } from "@/hooks/useTranslation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, ChevronDown, ChevronUp, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Ingredient, Step } from "@/types/recipe";
-import PortionSelectionDialog from "@/components/PortionSelectionDialog";
+import { PortionSelectionDialog } from "@/features/daily-menu";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 /**

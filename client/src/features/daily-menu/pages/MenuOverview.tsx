@@ -4,12 +4,9 @@ import {
   ArrowLeft, Clock, Users, Plus, Grid3x3, List, Grid2x2,
   Heart, Check, UtensilsCrossed, ChevronDown, X, Eye, Share2,
 } from "lucide-react";
-import { useRecipes } from "@/contexts/RecipeContext";
-import { useDailyMenu } from "@/contexts/DailyMenuContext";
+import { useRecipes } from "@/features/recipes";
+import { PortionSelectionDialog, RandomRecommendation, RecipePreviewDialog, useDailyMenu } from "@/features/daily-menu";
 import { useTranslation } from "@/hooks/useTranslation";
-import PortionSelectionDialog from "@/components/PortionSelectionDialog";
-import RecipePreviewDialog from "@/components/RecipePreviewDialog";
-import RandomRecommendation from "@/components/RandomRecommendation";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -157,7 +154,9 @@ export default function MenuOverview() {
         await navigator.clipboard.writeText(url);
         toast.success(t("shareLinkCopied") || "Link copied");
       } else {
-        window.prompt(t("shareLinkPrompt") || "Copy this link", url);
+        toast.message(t("shareLinkPrompt") || "Copy this link", {
+          description: url,
+        });
       }
     } catch {
       toast.error(t("shareFailed") || "Share failed");

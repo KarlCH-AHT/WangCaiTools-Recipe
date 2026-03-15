@@ -1,9 +1,9 @@
 import { useLocation, useRoute } from "wouter";
-import { useRecipes } from "@/contexts/RecipeContext";
+import { useRecipes } from "@/features/recipes";
 import { useTranslation, useFormatUnit } from "@/hooks/useTranslation";
 import { ArrowLeft, ChefHat, Download, ExternalLink, StickyNote, Edit2, Trash2, Loader2, Star, LayoutGrid } from "lucide-react";
 import { useState, useRef, useCallback, useEffect } from "react";
-import EditRecipeDialog from "@/components/EditRecipeDialog";
+import { EditRecipeDialog } from "@/features/recipes";
 import { exportRecipeToPDF } from "@/lib/pdfExport";
 import { Heart } from "lucide-react";
 import { toast } from "sonner";
