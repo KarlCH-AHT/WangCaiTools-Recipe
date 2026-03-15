@@ -6,7 +6,13 @@ export async function createWeeklyMenu(userId: number, data: Omit<InsertWeeklyMe
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  await db.insert(weeklyMenus).values({ ...data, userId });
+  const now = new Date();
+  await db.insert(weeklyMenus).values({
+    ...data,
+    userId,
+    createdAt: now,
+    updatedAt: now,
+  });
   const created = await db.select().from(weeklyMenus).where(eq(weeklyMenus.id, data.id)).limit(1);
   return created[0];
 }
