@@ -2,20 +2,22 @@ import { and, desc, eq } from "drizzle-orm";
 import { weeklyMenus, type InsertWeeklyMenu, type WeeklyMenu } from "../../../drizzle/schema";
 import { getDb } from "../../db";
 
-function toMysqlTimestamp(date: Date): string {
-  return date.toISOString().slice(0, 19).replace("T", " ");
+function toSqlDate(date: Date): Date {
+  const next = new Date(date);
+  next.setMilliseconds(0);
+  return next;
 }
 
 export async function createWeeklyMenu(userId: number, data: Omit<InsertWeeklyMenu, "userId">): Promise<WeeklyMenu> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const now = new Date();
+  const now = toSqlDate(new Date());
   await db.insert(weeklyMenus).values({
     ...data,
     userId,
-    createdAt: toMysqlTimestamp(now) as any,
-    updatedAt: toMysqlTimestamp(now) as any,
+    createdAt: now,
+    updatedAt: now,
   });
   const created = await db.select().from(weeklyMenus).where(eq(weeklyMenus.id, data.id)).limit(1);
   return created[0];
@@ -47,7 +49,7 @@ export async function updateWeeklyMenuById(id: string, userId: number, data: Par
 
   await db
     .update(weeklyMenus)
-    .set({ ...data, updatedAt: toMysqlTimestamp(new Date()) as any })
+    .set({ ...data, updatedAt: toSqlDate(new Date()) })
     .where(and(eq(weeklyMenus.id, id), eq(weeklyMenus.userId, userId)));
 }
 
