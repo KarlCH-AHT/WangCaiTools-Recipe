@@ -116,11 +116,20 @@ export default function AccountPage() {
     e.preventDefault();
     setSaving(true);
     try {
+      const trimmedAvatarUrl = avatarUrl.trim();
+      const isLocalDataAvatar = trimmedAvatarUrl.startsWith("data:image/");
+      if (isLocalDataAvatar) {
+        toast.warning("Local preview image cannot be saved permanently without image storage. Name change will still be saved.");
+      }
+
       const res = await fetch("/api/auth/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ name: name.trim() || undefined, avatarUrl: avatarUrl.trim() || undefined }),
+        body: JSON.stringify({
+          name: name.trim() || undefined,
+          avatarUrl: isLocalDataAvatar ? undefined : trimmedAvatarUrl || undefined,
+        }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));

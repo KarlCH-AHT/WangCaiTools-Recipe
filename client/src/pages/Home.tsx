@@ -343,9 +343,6 @@ export default function Home() {
                     <DropdownMenuItem onClick={() => navigate("/account")} className="text-sm rounded-lg">
                       {t("accountManagement") || "Account"}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/change-password")} className="text-sm rounded-lg">
-                      {t("changePassword") || "Change password"}
-                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout} className="text-sm rounded-lg">
                       {t("logout") || "Sign out"}
