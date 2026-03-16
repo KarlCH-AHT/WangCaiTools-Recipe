@@ -6,10 +6,21 @@ export async function createWeeklyMenu(userId: number, data: Omit<InsertWeeklyMe
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  await db.execute(sql`
-    insert into weeklyMenus (id, userId, title, startDate, itemsJson, createdAt, updatedAt)
-    values (${data.id}, ${userId}, ${data.title ?? null}, ${data.startDate}, ${data.itemsJson}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-  `);
+  try {
+    await db.execute(sql`
+      insert into weeklyMenus (id, userId, title, startDate, itemsJson, createdAt, updatedAt)
+      values (${data.id}, ${userId}, ${data.title ?? null}, ${data.startDate}, ${data.itemsJson}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    `);
+  } catch (error) {
+    const details =
+      error instanceof Error
+        ? error.message
+        : typeof error === "object" && error !== null
+          ? JSON.stringify(error)
+          : String(error);
+    console.error("[Weekly Menu] Failed to create weekly menu:", details, error);
+    throw new Error(`Failed to create weekly menu: ${details}`);
+  }
   const created = await db.select().from(weeklyMenus).where(eq(weeklyMenus.id, data.id)).limit(1);
   return created[0];
 }

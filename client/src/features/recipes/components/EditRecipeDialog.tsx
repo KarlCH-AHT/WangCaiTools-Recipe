@@ -118,15 +118,36 @@ export default function EditRecipeDialog({ recipe, open, onOpenChange }: EditRec
   }, [open, recipe]);
 
   const uploadImageFile = async (file: File): Promise<string> => {
+    const toDataUrl = () =>
+      new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result === "string") {
+            resolve(reader.result);
+            return;
+          }
+          reject(new Error("Failed to read image file"));
+        };
+        reader.onerror = () => reject(new Error("Failed to read image file"));
+        reader.readAsDataURL(file);
+      });
+
     const formData = new FormData();
     formData.append("file", file);
-    const response = await fetch("/api/upload-image", { method: "POST", credentials: "include", body: formData });
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error((err as any).error || "Upload failed");
+    try {
+      const response = await fetch("/api/upload-image", { method: "POST", credentials: "include", body: formData });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        const message = (err as any).error || "Upload failed";
+        toast.warning(`${message}，先用本地图片继续保存`);
+        return await toDataUrl();
+      }
+      const { url } = await response.json();
+      return url;
+    } catch {
+      toast.warning("图片上传失败，先用本地图片继续保存");
+      return await toDataUrl();
     }
-    const { url } = await response.json();
-    return url;
   };
 
   const handleFilesSelected = (files: FileList | null) => {

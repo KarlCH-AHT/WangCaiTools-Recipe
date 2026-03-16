@@ -37,6 +37,42 @@ function buildPublicUrl(key: string): string {
   return `https://${ENV.s3Bucket}.s3.${ENV.s3Region}.amazonaws.com/${key}`;
 }
 
+type StorageErrorLike = {
+  name?: string;
+  message?: string;
+  Code?: string;
+  code?: string;
+  $metadata?: {
+    httpStatusCode?: number;
+    requestId?: string;
+  };
+};
+
+export function describeStorageError(error: unknown): string {
+  const details = (error ?? {}) as StorageErrorLike;
+  const code = details.Code || details.code || details.name || "S3Error";
+  const message = details.message || "Unknown storage error";
+  const statusCode = details.$metadata?.httpStatusCode;
+
+  const adviceByCode: Record<string, string> = {
+    AccessDenied: "Check the IAM permissions and bucket policy for PutObject.",
+    InvalidAccessKeyId: "Check S3_ACCESS_KEY_ID.",
+    SignatureDoesNotMatch: "Check S3_SECRET_ACCESS_KEY and S3_REGION.",
+    PermanentRedirect: "The bucket is in a different region. Check S3_REGION.",
+    AuthorizationHeaderMalformed:
+      "The request was signed for the wrong region. Check S3_REGION.",
+    NoSuchBucket: "Check S3_BUCKET.",
+  };
+
+  const advice =
+    adviceByCode[code] ||
+    (statusCode === 403
+      ? "Check the IAM permissions and bucket policy for PutObject."
+      : undefined);
+
+  return advice ? `${code}: ${message} ${advice}` : `${code}: ${message}`;
+}
+
 /**
  * Upload a file to S3.
  * Returns { key, url } where url is the public URL.

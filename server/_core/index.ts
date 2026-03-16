@@ -9,7 +9,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
-import { storagePut } from "../storage";
+import { describeStorageError, storagePut } from "../storage";
 import { registerAuthRoutes } from "../auth";
 import { registerSharingRoutes } from "../features/sharing";
 import {
@@ -55,7 +55,9 @@ async function startServer() {
       return res.json({ url });
     } catch (err) {
       console.error("[Image Upload] Error:", err);
-      return res.status(500).json({ error: "Upload failed" });
+      return res.status(500).json({
+        error: `Image upload failed. ${describeStorageError(err)}`,
+      });
     }
   });
 
